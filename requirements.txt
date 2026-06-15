@@ -1,0 +1,39 @@
+# ============================================================
+# RTattooAI - ML (etapa de detección YOLOv8)
+# Probado con Python 3.11-3.14 en Windows 11 + GPU NVIDIA (CUDA).
+#
+# IMPORTANTE (GPU): el wheel de torch de PyPI puede ser CPU-only en
+# algunas plataformas. Para forzar la build CUDA, instala torch desde
+# el indice oficial ANTES de este archivo, p. ej.:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+# y luego:  pip install -r requirements.txt
+# ============================================================
+
+# --- Núcleo de visión / entrenamiento ---
+ultralytics>=8.3.0          # YOLOv8/YOLO11 (entrenamiento, val, export ONNX)
+torch>=2.2.0                # backend de deep learning (instalar build CUDA)
+torchvision>=0.17.0
+
+# --- Descarga de datasets ---
+roboflow>=1.1.40            # descarga de Roboflow Universe (necesita ROBOFLOW_API_KEY)
+
+# --- Procesamiento de imágenes / anotaciones ---
+opencv-python>=4.9.0        # lectura de imágenes, dibujo de cajas
+Pillow>=10.2.0
+numpy>=1.26.0
+imagehash>=4.3.1            # hash perceptual para deduplicar entre fuentes
+PyYAML>=6.0                 # lectura/escritura de data.yaml
+
+# --- Métricas / reportes ---
+pandas>=2.2.0              # tablas resumen (csv/markdown)
+matplotlib>=3.8.0          # curvas PR, matriz de confusión, grillas
+seaborn>=0.13.0            # matriz de confusión
+
+# --- Exportación ONNX ---
+onnx>=1.16.0
+onnxruntime>=1.17.0        # verificación del .onnx exportado
+onnxslim>=0.1.34           # simplificación del grafo (usado por ultralytics export)
+
+# --- Utilidades ---
+tqdm>=4.66.0
+requests>=2.31.0

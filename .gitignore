@@ -1,0 +1,60 @@
+# ---- RTattooAI ML: artefactos que NUNCA se commitean ----
+
+# Datasets (descargados / generados). Se reconstruyen con los scripts.
+datasets/raw/
+datasets/unified/
+datasets/real_test/*
+!datasets/real_test/README.md
+!datasets/real_test/.gitkeep
+
+# Pesos de modelos y exportaciones
+models/
+*.pt
+*.onnx
+*.engine
+*.torchscript
+yolov8*.pt
+
+# Salidas de entrenamiento de Ultralytics
+runs/
+wandb/
+
+# Imágenes y videos sueltos (evita commitear datos por accidente)
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tif
+*.tiff
+*.webp
+*.mp4
+*.avi
+# ...pero sí permitimos las figuras de reportes generadas
+!reports/**/*.png
+!reports/**/*.jpg
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Config local de Claude Code (no compartir)
+.claude/settings.local.json
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporales
+*.log
+_*_tmp*

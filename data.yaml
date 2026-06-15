@@ -1,0 +1,22 @@
+# ============================================================
+# RTattooAI - Configuración del dataset UNIFICADO (formato YOLO)
+# Detección de tatuajes — UNA sola clase.
+#
+# Este archivo es la "plantilla raíz" del proyecto. El dataset real
+# se genera con src/detection/prepare_dataset.py, que ESCRIBE su propio
+# data.yaml dentro de datasets/unified/data.yaml con rutas absolutas.
+# Ultralytics debe entrenarse apuntando a datasets/unified/data.yaml.
+#
+# Las rutas de abajo son relativas a este archivo y asumen que el
+# dataset unificado ya fue generado.
+# ============================================================
+
+path: datasets/unified      # raíz del dataset (relativa a este yaml)
+train: images/train         # imágenes de entrenamiento
+val: images/val             # imágenes de validación
+test: images/test           # imágenes de test (held-out)
+
+# Clases
+nc: 1
+names:
+  0: tatuaje
