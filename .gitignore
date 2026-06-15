@@ -46,6 +46,11 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 
+# Secretos / variables de entorno (NUNCA commitear)
+.env
+.env.*
+!.env.example
+
 # Config local de Claude Code (no compartir)
 .claude/settings.local.json
 

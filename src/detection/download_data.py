@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.shared import paths
 from src.shared.seeds import set_seed
+from src.shared.env import load_env
 
 # ------------------------------------------------------------------
 # Registro de fuentes Roboflow Universe.
@@ -234,6 +235,7 @@ def main() -> int:
     args = ap.parse_args()
 
     set_seed()
+    load_env()  # carga ROBOFLOW_API_KEY desde .env si existe
 
     if args.list:
         for s in SOURCES:

@@ -39,12 +39,17 @@ El modelo final se exporta a **ONNX** para que lo consuma un backend en
 ### 🔓 Para desbloquear
 
 1. **Roboflow** (obligatorio para el dataset): obtén tu API key en
-   <https://app.roboflow.com> → *Settings → API Keys*, y configúrala como
-   variable de entorno persistente del usuario (PowerShell):
-   ```powershell
-   setx ROBOFLOW_API_KEY "tu_clave_aqui"
-   ```
-   Cierra y reabre la terminal. **No la commitees.**
+   <https://app.roboflow.com> → *Settings → API Keys*. Dos opciones (no la
+   commitees nunca):
+   - **Recomendada — archivo `.env`:** copia `.env.example` a `.env` y pega la
+     clave. Los scripts lo cargan solos (`src/shared/env.py` + python-dotenv).
+     ```
+     ROBOFLOW_API_KEY=tu_clave_aqui
+     ```
+   - **Variable de entorno** (PowerShell, persistente; reabre la terminal):
+     ```powershell
+     setx ROBOFLOW_API_KEY "tu_clave_aqui"
+     ```
 
 2. **DeMSI** (opcional pero recomendado — es el baseline de la referencia):
    el dataset no tiene descarga pública (está tras el login del repositorio
