@@ -86,8 +86,9 @@ rtattooai-ml/
 
 ## ⚙️ Setup
 
-**Requisitos:** Windows/Linux, **GPU NVIDIA con CUDA** (probado en RTX 3070,
-8 GB) y Python 3.11–3.14.
+**Requisitos:** Windows/Linux, **GPU NVIDIA con CUDA** y Python 3.11–3.14.
+Entorno **verificado** en este repo: Windows 11, **RTX 3070 Ti (8 GB)**,
+Python 3.14.3, torch 2.11.0+cu128 (ver [`reports/environment_check.md`](reports/environment_check.md)).
 
 ```powershell
 # 1) Entorno virtual
@@ -95,7 +96,9 @@ py -m venv venv
 .\venv\Scripts\Activate.ps1        # Linux/Mac: source venv/bin/activate
 
 # 2) PyTorch con CUDA (IMPORTANTE: instalar la build CUDA primero)
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+#    Python 3.14 -> usar cu128 (cu124 no tiene wheels para cp314):
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+#    Python 3.11-3.13 -> cu124 también sirve.
 
 # 3) Resto de dependencias
 pip install -r requirements.txt
@@ -106,6 +109,11 @@ python -c "import torch; print('CUDA:', torch.cuda.is_available(), torch.cuda.ge
 
 > Si `torch.cuda.is_available()` es `False`, revisa drivers/CUDA. El
 > entrenamiento **no** corre en CPU por política del proyecto.
+>
+> **Windows + Python 3.14:** Ultralytics usa *workers* multiproceso en el
+> DataLoader; en Windows esto exige el guard `if __name__ == "__main__":`
+> (todos los scripts de este repo lo tienen). Ejecútalos siempre como módulo
+> (`python -m src.detection.train`), no copiando su contenido suelto.
 
 ---
 

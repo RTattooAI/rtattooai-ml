@@ -1,11 +1,15 @@
 # ============================================================
 # RTattooAI - ML (etapa de detección YOLOv8)
-# Probado con Python 3.11-3.14 en Windows 11 + GPU NVIDIA (CUDA).
+# Verificado en Python 3.14 (Windows 11) + GPU NVIDIA RTX 3070 Ti (CUDA 12.8).
 #
-# IMPORTANTE (GPU): el wheel de torch de PyPI puede ser CPU-only en
-# algunas plataformas. Para forzar la build CUDA, instala torch desde
-# el indice oficial ANTES de este archivo, p. ej.:
-#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+# IMPORTANTE (GPU): el wheel de torch de PyPI puede ser CPU-only. Para forzar
+# la build CUDA, instala torch desde el indice oficial ANTES de este archivo.
+#   - Python 3.14 (este entorno):
+#       pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+#       (instala torch 2.11.0+cu128 / torchvision 0.26.0+cu128; cu124 y
+#        anteriores NO tienen wheels para Python 3.14 / cp314)
+#   - Python 3.11-3.13:
+#       pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 # y luego:  pip install -r requirements.txt
 # ============================================================
 
