@@ -26,15 +26,20 @@ El modelo final se exporta a **ONNX** para que lo consuma un backend en
 | Etapa | Estado |
 |-------|--------|
 | Estructura del repo, scripts, documentación | ✅ Completo |
-| Toolchain (PyTorch CUDA + Ultralytics) verificado en GPU | ✅ Verificado (RTX 3070, 8 GB) |
-| Descarga de datasets (Roboflow) | ⛔ **Bloqueado: falta `ROBOFLOW_API_KEY`** |
+| Toolchain (PyTorch CUDA + Ultralytics) verificado en GPU | ✅ Verificado (RTX 3070 Ti, 8 GB) |
+| Descarga de datasets (Roboflow) | ✅ 8 fuentes (~21.8k crudas) |
+| Unificación + dedup (7006 imgs únicas) | ✅ [reports/dataset_summary.md](reports/dataset_summary.md) |
 | DeMSI (FER/Zagreb) | ⛔ **Descarga manual** (login al repositorio FER) — ver TODO abajo |
-| Entrenamiento / métricas / ONNX | ⏸️ A la espera de los datos |
+| Entrenamiento (yolov8m + yolov8s, 150 épocas) | ✅ Completado en GPU |
+| Evaluación + reportes | ✅ [reports/metrics.md](reports/metrics.md) |
+| Exportación ONNX | ✅ `models/yolov8m_best.onnx` (opset 12) |
 
-> **No se han fabricado métricas.** En cuanto se configure `ROBOFLOW_API_KEY`,
-> el pipeline completo corre con los comandos de la sección
-> [Cómo ejecutar](#-cómo-ejecutar). Las métricas reales aparecerán en
-> [`reports/`](reports/) tras entrenar.
+> **Resultado (modelo definitivo `yolov8m`, split test held-out):
+> mAP@0.5 = 0.915, precisión = 0.889** → **cumple la meta** (mAP@0.5 > 0.85,
+> precisión ≥ 0.80) y **supera el baseline** Pocevičė 2024 (0.79). Métricas
+> reales y reproducibles (semilla 42), no fabricadas. Tabla completa val/test
+> en [reports/metrics.md](reports/metrics.md). **Pendiente:** integrar DeMSI
+> (manual) y poblar `datasets/real_test/` para la brecha sim-to-real.
 
 ### 🔓 Para desbloquear
 
@@ -191,6 +196,24 @@ datasets públicos de tatuajes son cada uno < 10k).
 |------------|---------|
 | **Baseline** — Pocevičė et al., 2024 (YOLOv5 sobre DeMSI) | 0.79 |
 | **Meta de la tesis** | **> 0.85** (y precisión ≥ 0.80) |
+
+### Resultados obtenidos (reales, seed 42)
+
+Dataset unificado: **7006 imágenes / 8619 cajas** (train 5604 / val 701 / test 701).
+Entrenamiento en RTX 3070 Ti (8 GB), batch auto = 3, imgsz 640.
+
+| Modelo | Split | mAP@0.5 | mAP@0.5:0.95 | Precisión | Recall |
+|--------|-------|---------|--------------|-----------|--------|
+| **yolov8m** (definitivo) | val | 0.924 | 0.718 | 0.931 | 0.875 |
+| **yolov8m** (definitivo) | **test** | **0.915** | **0.681** | **0.889** | **0.866** |
+| yolov8s (baseline) | val | 0.916 | 0.701 | 0.891 | 0.880 |
+| yolov8s (baseline) | test | 0.923 | 0.681 | 0.893 | 0.873 |
+
+✅ **Meta cumplida:** `yolov8m` en test alcanza **mAP@0.5 = 0.915 > 0.85** y
+**precisión = 0.889 ≥ 0.80**, y **supera el baseline 0.79**. val ≈ test (0.924
+vs 0.915) → sin overfitting ni fuga. Curvas PR, matrices de confusión y grilla
+de predicciones en [`reports/`](reports/); tabla en
+[reports/metrics.md](reports/metrics.md).
 
 `evaluate.py` reporta mAP@0.5, mAP@0.5:0.95, precisión y recall en **val** y
 **test**, y emite un veredicto explícito de si se cumple la meta. La métrica
