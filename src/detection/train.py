@@ -47,30 +47,56 @@ def require_gpu() -> int:
     return 0
 
 
+def _last_epoch(results_csv: Path) -> int:
+    """Última época registrada en results.csv (0 si no existe/ilegible)."""
+    if not results_csv.exists():
+        return 0
+    try:
+        lines = [l for l in results_csv.read_text().splitlines() if l.strip()]
+        return int(lines[-1].split(",")[0]) if len(lines) > 1 else 0
+    except Exception:  # noqa: BLE001
+        return 0
+
+
 def train_one(model_name: str, data_yaml: Path, epochs: int, imgsz: int,
               patience: int, batch, device: int) -> Path:
-    """Entrena un modelo y devuelve la ruta de best.pt copiada a models/."""
+    """Entrena (o reanuda) un modelo y devuelve best.pt copiado a models/.
+
+    Restartable: si existe runs/detect/<name>/weights/last.pt y el run no ha
+    terminado, reanuda desde la última época (útil tras un corte/suspensión).
+    """
     from ultralytics import YOLO
 
     run_name = Path(model_name).stem  # 'yolov8m'
-    print(f"\n===== Entrenando {run_name} =====")
-    model = YOLO(model_name)
-    model.train(
-        data=str(data_yaml),
-        epochs=epochs,
-        imgsz=imgsz,
-        patience=patience,
-        batch=batch,
-        seed=SEED,
-        deterministic=True,
-        flipud=0.0,            # sin volteo vertical
-        # resto de augmentations: valores por defecto de Ultralytics
-        project=str(paths.RUNS / "detect"),
-        name=run_name,
-        exist_ok=True,
-        device=device,
-        verbose=True,
-    )
+    run_dir = paths.RUNS / "detect" / run_name
+    last_pt = run_dir / "weights" / "last.pt"
+    done_epoch = _last_epoch(run_dir / "results.csv")
+
+    if last_pt.exists() and done_epoch >= epochs:
+        print(f"\n===== {run_name}: ya completo ({done_epoch}/{epochs} épocas), se omite =====")
+    elif last_pt.exists() and done_epoch > 0:
+        print(f"\n===== Reanudando {run_name} desde época {done_epoch}/{epochs} =====")
+        model = YOLO(str(last_pt))
+        model.train(resume=True)   # reanuda con los args guardados del run
+    else:
+        print(f"\n===== Entrenando {run_name} (desde cero) =====")
+        model = YOLO(model_name)
+        model.train(
+            data=str(data_yaml),
+            epochs=epochs,
+            imgsz=imgsz,
+            patience=patience,
+            batch=batch,
+            seed=SEED,
+            deterministic=True,
+            flipud=0.0,            # sin volteo vertical
+            # resto de augmentations: valores por defecto de Ultralytics
+            project=str(paths.RUNS / "detect"),
+            name=run_name,
+            exist_ok=True,
+            device=device,
+            verbose=True,
+        )
     best = paths.RUNS / "detect" / run_name / "weights" / "best.pt"
     paths.ensure_dirs(paths.MODELS)
     dst = paths.MODELS / f"{run_name}_best.pt"
