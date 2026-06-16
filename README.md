@@ -268,6 +268,24 @@ var output = results.First().AsTensor<float>(); // [1, 5, 8400]
 
 ---
 
+## 🖥️ Demo interactiva (Streamlit)
+
+Probar el modelo con imágenes propias o **una foto tomada al momento** con la cámara:
+
+```powershell
+streamlit run app/streamlit_app.py
+```
+
+Abre `http://localhost:8501`. Pestañas **Subir imagen** y **Tomar foto** (cámara
+del navegador). En la barra lateral se ajustan confianza e IoU. Para usar la
+**cámara del celular**, abre en el teléfono la *Network URL* que imprime
+Streamlit (mismo WiFi, p. ej. `http://192.168.x.x:8501`).
+
+> Es una demo de **apoyo preliminar**: muestra cajas y confianzas; no es
+> identificación definitiva.
+
+---
+
 ## 🔁 Reproducibilidad
 
 - Semilla global **42** en descarga, preparación, splits y entrenamiento.
