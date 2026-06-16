@@ -305,6 +305,24 @@ def build(dup_threshold: int, val_frac: float, test_frac: float,
     md = write_markdown_table(rows, headers, paths.REPORTS / "dataset_summary.md")
     write_csv(rows, headers, paths.REPORTS / "dataset_summary.csv")
 
+    # fuentes reducidas >90% por dedup = re-subidas casi idénticas de otras
+    # fuentes (se eliminan para evitar fuga train/test). Se documenta.
+    heavy = []
+    for src in sorted(per_source):
+        raw_n = per_source[src]["raw_images"]
+        kept_n = per_source[src]["images"]
+        if raw_n >= 50 and kept_n <= 0.1 * raw_n:
+            heavy.append(f"`{src}` ({raw_n}→{kept_n})")
+    heavy_note = ""
+    if heavy:
+        heavy_note = (
+            "\n> **Nota de procedencia:** las fuentes " + ", ".join(heavy) +
+            " quedaron casi vacías tras la deduplicación perceptual porque son "
+            "**re-subidas casi idénticas** (distancia phash ≈ 0) de imágenes ya "
+            "incluidas en otras fuentes. Se descartan para **evitar fuga de datos "
+            "entre train y test**. Verificado por distancia de Hamming.\n"
+        )
+
     # nota de splits añadida al markdown
     split_note = (
         f"\n**Splits (seed={SEED}):** train={len(train)}, val={len(val)}, test={len(test)} "
@@ -312,7 +330,7 @@ def build(dup_threshold: int, val_frac: float, test_frac: float,
         f"**Imágenes crudas vistas:** {total_raw} | "
         f"**duplicados descartados:** {total_dups} | "
         f"**no procesables:** {total_unhashable}.\n"
-    )
+    ) + heavy_note
     (paths.REPORTS / "dataset_summary.md").write_text(md + split_note, encoding="utf-8")
 
     print("\n" + md + split_note)
