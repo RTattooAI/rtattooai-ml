@@ -15,7 +15,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import numpy as np
 import streamlit as st
 from PIL import Image
 
@@ -41,11 +40,16 @@ def available_models() -> list[Path]:
 
 
 def run_inference(model, image: Image.Image, conf: float, iou: float):
-    """Corre el modelo sobre una imagen PIL y devuelve (anotada_RGB, detecciones)."""
-    img = np.array(image.convert("RGB"))
-    results = model.predict(img, conf=conf, iou=iou, verbose=False)
+    """Corre el modelo sobre una imagen PIL y devuelve (anotada_RGB, detecciones).
+
+    IMPORTANTE: se pasa la imagen PIL (RGB) directo a predict. Si se pasara un
+    array numpy, Ultralytics lo interpretaría como BGR e invertiría los canales
+    (la imagen saldría azulada y el modelo recibiría los colores cambiados).
+    """
+    image = image.convert("RGB")
+    results = model.predict(image, conf=conf, iou=iou, verbose=False)
     res = results[0]
-    annotated = res.plot()[:, :, ::-1]  # BGR -> RGB
+    annotated = res.plot()[:, :, ::-1]  # plot() devuelve BGR -> a RGB para mostrar
     dets = []
     if res.boxes is not None:
         for b in res.boxes:
