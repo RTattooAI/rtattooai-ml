@@ -1,8 +1,10 @@
 # ---- RTattooAI ML: artefactos que NUNCA se commitean ----
 
-# Datasets (descargados / generados). Se reconstruyen con los scripts.
-datasets/raw/
-datasets/unified/
+# Datasets (descargados / generados / evaluación). NUNCA se commitean; se
+# reconstruyen con los scripts. Se ignora TODO datasets/ salvo el README de
+# real_test (incluye raw/, unified/, demsi_eval/, y cualquier set futuro).
+datasets/*
+!datasets/real_test/
 datasets/real_test/*
 !datasets/real_test/README.md
 !datasets/real_test/.gitkeep
