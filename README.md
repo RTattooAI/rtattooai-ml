@@ -220,6 +220,31 @@ de predicciones en [`reports/`](reports/); tabla en
 sobre `datasets/real_test/` (imágenes peruanas reales) se reporta **por
 separado** como medida de la brecha sim-to-real.
 
+### Generalización cross-dataset (DeMSI) — brecha de dominio
+
+Evaluación **zero-shot** del modelo (entrenado solo con las fuentes Roboflow)
+sobre las **890 imágenes de DeMSI** (1840 cajas), que **no** se usaron en el
+entrenamiento. Reporte en [reports/metrics_demsi.md](reports/metrics_demsi.md).
+
+| Modelo | Conjunto | mAP@0.5 | mAP@0.5:0.95 | Precisión | Recall |
+|--------|----------|---------|--------------|-----------|--------|
+| yolov8m | test propio (in-distribution) | 0.915 | 0.681 | 0.889 | 0.866 |
+| yolov8m | **DeMSI (cross-dataset)** | **0.557** | 0.390 | 0.823 | 0.517 |
+
+**Lectura honesta:** hay una **caída de dominio** clara (0.915 → 0.557). No es
+comparable de forma directa con el baseline 0.79 de Pocevičė: **ellos
+entrenaron sobre DeMSI** y nosotros lo evaluamos en frío. La precisión se
+mantiene alta (0.82) y el modelo detecta ≥1 tatuaje en el **95.7%** de las
+imágenes (ver [reports/external_demsi/](reports/external_demsi/)), pero el
+**recall baja a 0.52**: DeMSI etiqueta **varios tatuajes pequeños y ajustados
+por imagen** y el modelo tiende a marcar la región principal, perdiendo los
+secundarios (de ahí también el mAP@0.5:0.95 más bajo). **Conclusión para el
+despliegue:** para acercarse al dominio real conviene **incluir DeMSI (y las
+imágenes peruanas) en el entrenamiento**, no solo en evaluación.
+
+Herramientas: `prepare_external.py` (convierte un set externo anotado a YOLO) y
+`predict_folder.py` (inferencia cualitativa sobre una carpeta sin anotaciones).
+
 ---
 
 ## 🚀 Entrenamiento (parámetros)

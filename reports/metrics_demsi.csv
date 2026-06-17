@@ -1,0 +1,3 @@
+modelo,split,mAP@0.5,mAP@0.5:0.95,precision,recall
+yolov8m,val,0.5565,0.3896,0.8226,0.5174
+yolov8s,val,0.5619,0.3944,0.7917,0.5371

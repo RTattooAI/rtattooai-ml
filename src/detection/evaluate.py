@@ -42,11 +42,11 @@ def find_models(explicit: list[str] | None) -> list[Path]:
     return sorted(paths.RUNS.glob("detect/*/weights/best.pt"))
 
 
-def evaluate_model(weights: Path, data_yaml: Path, split: str, device: int):
+def evaluate_model(weights: Path, data_yaml: Path, split: str, device: int, tag: str = ""):
     from ultralytics import YOLO
     model = YOLO(str(weights))
     name = weights.stem.replace("_best", "")
-    run_name = f"{name}_{split}"
+    run_name = f"{name}_{split}" + (f"_{tag}" if tag else "")
     metrics = model.val(
         data=str(data_yaml),
         split=split,
@@ -115,6 +115,8 @@ def main() -> int:
     ap.add_argument("--data", default=str(paths.UNIFIED_YAML))
     ap.add_argument("--splits", nargs="+", default=["val", "test"])
     ap.add_argument("--grid", type=int, default=6, help="nº de imágenes en la grilla")
+    ap.add_argument("--tag", default="", help="sufijo para los reportes (p. ej. 'demsi') "
+                    "para no sobrescribir metrics.md del test principal")
     args = ap.parse_args()
 
     set_seed()
@@ -137,29 +139,33 @@ def main() -> int:
 
     rows = []
     primary_name = models[0].stem.replace("_best", "")
-    primary_test_row = None
+    primary_rows = {}
     for w in models:
         for split in args.splits:
-            name, row = evaluate_model(w, data_yaml, split, device)
+            name, row = evaluate_model(w, data_yaml, split, device, tag=args.tag)
             rows.append(row)
-            if name == primary_name and split == "test":
-                primary_test_row = row
+            if name == primary_name:
+                primary_rows[split] = row
 
+    suffix = f"_{args.tag}" if args.tag else ""
     headers = ["modelo", "split", "mAP@0.5", "mAP@0.5:0.95", "precision", "recall"]
-    md = write_markdown_table(rows, headers, paths.REPORTS / "metrics.md")
-    write_csv(rows, headers, paths.REPORTS / "metrics.csv")
+    md = write_markdown_table(rows, headers, paths.REPORTS / f"metrics{suffix}.md")
+    write_csv(rows, headers, paths.REPORTS / f"metrics{suffix}.csv")
 
-    # veredicto vs baseline/meta (sobre el modelo definitivo en test)
+    # veredicto vs baseline/meta (modelo definitivo; prefiere test, si no el 1er split)
     verdict = ""
-    if primary_test_row:
+    primary_row = primary_rows.get("test") or (
+        primary_rows.get(args.splits[0]) if args.splits else None)
+    if primary_row:
+        dataset_lbl = f" — dataset `{args.tag}`" if args.tag else ""
         verdict = (
-            f"\n## Comparación contra baseline y meta\n\n"
+            f"\n## Comparación contra baseline y meta{dataset_lbl}\n\n"
             f"- **Baseline** (Pocevičė et al., 2024, YOLOv5/DeMSI): mAP@0.5 = {BASELINE_MAP50}\n"
             f"- **Meta tesis**: mAP@0.5 > {GOAL_MAP50} y precisión >= {GOAL_PRECISION}\n\n"
-            f"**Modelo definitivo `{primary_name}` (split test):**\n\n"
-            f"```\n{goal_verdict(primary_test_row['mAP@0.5'], primary_test_row['precision'])}\n```\n"
+            f"**Modelo definitivo `{primary_name}` (split {primary_row['split']}):**\n\n"
+            f"```\n{goal_verdict(primary_row['mAP@0.5'], primary_row['precision'])}\n```\n"
         )
-    (paths.REPORTS / "metrics.md").write_text(md + verdict, encoding="utf-8")
+    (paths.REPORTS / f"metrics{suffix}.md").write_text(md + verdict, encoding="utf-8")
 
     print("\n" + md + verdict)
 
