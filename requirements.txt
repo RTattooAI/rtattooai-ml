@@ -44,3 +44,6 @@ requests>=2.31.0
 
 # --- Demo interactiva (opcional) ---
 streamlit>=1.40.0          # app/streamlit_app.py: probar el modelo con cámara/imágenes
+
+# --- Etapa 2: identificación por embeddings (Paso 0) ---
+timm>=1.0.0                # backbone preentrenado DINOv2 para embeddings de tatuajes
