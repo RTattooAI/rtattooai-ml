@@ -27,6 +27,34 @@ datos sintéticos / fine-tuning.
 
 ---
 
+## Galería multi-vista + Blender (v7)
+
+Para subir la similitud de los matches reales, la galería debe tener **varias
+vistas realistas** por tatuaje, no solo el diseño limpio.
+
+1. **Generar vistas (Blender):** `blender/generate_dataset_v7.py` aplica cada
+   diseño al cuerpo 3D bajo distintas zonas/pieles/ángulos, **recorta el tatuaje**
+   (render por región), aplica *domain randomization* y escribe
+   `OUTPUT/crops/<tattoo_id>/*.png` + `OUTPUT/manifest.csv`. Correr dentro de Blender:
+   ```bash
+   blender escena.blend --background --python blender/generate_dataset_v7.py
+   ```
+2. **Construir galería multi-vista:**
+   ```bash
+   python -m src.embedding.build_gallery --sources datasets/gang_tattoos OUTPUT/crops
+   ```
+   Guarda varias vistas por identidad; en el matching, el puntaje de una
+   identidad es el **coseno máximo** entre sus vistas.
+3. **Calibrar el estándar** (umbral/margen) con fotos reales:
+   ```bash
+   python -m src.embedding.calibrate --positives <reales_galeria> --negatives <reales_no_banda> --write
+   ```
+   Escribe `match_config.json` (que leen `identify.py` y las apps).
+
+`identify.py` y `app/streamlit_full.py` consumen la galería + el config.
+
+---
+
 ## Diseño completo (siguiente)
 
 ## Qué irá aquí

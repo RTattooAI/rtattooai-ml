@@ -72,15 +72,22 @@ class TattooIdentifier:
     def match(self, crop: Image.Image, topk=5):
         """Top-K de la galería para un recorte. Devuelve (matches, es_coincidencia).
 
-        Coincidencia válida = top-1 supera el umbral Y le saca al top-2 al menos
-        `margin` (evita "empates" de baja confianza como falsos positivos).
+        Soporta galería MULTI-VISTA (varias imágenes por identidad): el puntaje
+        de una identidad es el coseno MÁXIMO entre sus vistas. Coincidencia
+        válida = top-1 supera el umbral Y le saca al top-2 al menos `margin`
+        (evita "empates" de baja confianza como falsos positivos).
         """
         e = self.embedder.embed(crop)
         sims = self.gallery @ e
-        order = np.argsort(-sims)
-        matches = [(self.names[i], float(sims[i])) for i in order[:topk]]
-        top1 = float(sims[order[0]])
-        top2 = float(sims[order[1]]) if len(order) > 1 else -1.0
+        best: dict[str, float] = {}
+        for name, s in zip(self.names, sims):
+            s = float(s)
+            if name not in best or s > best[name]:
+                best[name] = s
+        ranked = sorted(best.items(), key=lambda kv: -kv[1])
+        matches = ranked[:topk]
+        top1 = ranked[0][1]
+        top2 = ranked[1][1] if len(ranked) > 1 else -1.0
         is_match = bool(top1 >= self.threshold and (top1 - top2) >= self.margin)
         return matches, is_match
 
