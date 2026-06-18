@@ -11,6 +11,7 @@ Uso (consulta por línea de comandos):
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -25,19 +26,35 @@ from src.embedding.embedder import TattooEmbedder
 GANG_DIR = paths.DATASETS / "gang_tattoos"
 GALLERY_NPZ = paths.MODELS / "gallery_dinov2.npz"
 DETECTOR = paths.MODELS / "yolov8m_best.pt"
-DEFAULT_THRESHOLD = 0.45   # calibrado en el Paso 0 (separa banda ~0.71 de no-banda ~0.28)
+CONFIG_PATH = Path(__file__).parent / "match_config.json"
+_FALLBACK = {"det_conf": 0.15, "det_iou": 0.45, "match_threshold": 0.55, "match_margin": 0.05}
+
+
+def load_config() -> dict:
+    """Lee el estándar de operación (umbral, margen, conf de detección)."""
+    cfg = dict(_FALLBACK)
+    if CONFIG_PATH.exists():
+        try:
+            data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+            cfg.update({k: v for k, v in data.items() if not k.startswith("_")})
+        except Exception:  # noqa: BLE001
+            pass
+    return cfg
 
 
 class TattooIdentifier:
     def __init__(self, detector_weights: Path = DETECTOR, gallery_path: Path = GALLERY_NPZ,
-                 threshold: float = DEFAULT_THRESHOLD, embedder: TattooEmbedder | None = None):
+                 threshold: float | None = None, margin: float | None = None,
+                 embedder: TattooEmbedder | None = None):
         from ultralytics import YOLO
+        cfg = load_config()
         self.detector = YOLO(str(detector_weights))
         data = np.load(str(gallery_path), allow_pickle=True)
         self.gallery = data["embeddings"].astype("float32")      # (G, dim) L2-norm
         self.names = [str(n) for n in data["names"]]
         self.embedder = embedder or TattooEmbedder()
-        self.threshold = threshold
+        self.threshold = cfg["match_threshold"] if threshold is None else threshold
+        self.margin = cfg["match_margin"] if margin is None else margin
 
     def detect_crops(self, image: Image.Image, conf=0.25, iou=0.45):
         """Devuelve [(xyxy, crop_PIL, conf_det)] de los tatuajes detectados."""
@@ -53,12 +70,18 @@ class TattooIdentifier:
         return out
 
     def match(self, crop: Image.Image, topk=5):
-        """Top-K de la galería para un recorte. Devuelve (matches, es_coincidencia)."""
+        """Top-K de la galería para un recorte. Devuelve (matches, es_coincidencia).
+
+        Coincidencia válida = top-1 supera el umbral Y le saca al top-2 al menos
+        `margin` (evita "empates" de baja confianza como falsos positivos).
+        """
         e = self.embedder.embed(crop)
         sims = self.gallery @ e
-        order = np.argsort(-sims)[:topk]
-        matches = [(self.names[i], float(sims[i])) for i in order]
-        is_match = bool(matches and matches[0][1] >= self.threshold)
+        order = np.argsort(-sims)
+        matches = [(self.names[i], float(sims[i])) for i in order[:topk]]
+        top1 = float(sims[order[0]])
+        top2 = float(sims[order[1]]) if len(order) > 1 else -1.0
+        is_match = bool(top1 >= self.threshold and (top1 - top2) >= self.margin)
         return matches, is_match
 
     def identify(self, image: Image.Image, conf=0.25, iou=0.45, topk=5):
@@ -75,14 +98,16 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Consulta: identificar tatuaje(s) en una foto")
     ap.add_argument("--image", required=True)
     ap.add_argument("--topk", type=int, default=5)
-    ap.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD)
+    ap.add_argument("--threshold", type=float, default=None, help="por defecto: match_config.json")
+    ap.add_argument("--margin", type=float, default=None, help="por defecto: match_config.json")
     args = ap.parse_args()
 
     if not GALLERY_NPZ.exists():
         print(f"ERROR: no existe la galería {GALLERY_NPZ}. Corre step0_baseline.py primero.")
         return 1
     img = Image.open(args.image)
-    ident = TattooIdentifier(threshold=args.threshold)
+    ident = TattooIdentifier(threshold=args.threshold, margin=args.margin)
+    print(f"(umbral={ident.threshold:.2f}, margen={ident.margin:.2f})")
     results = ident.identify(img, topk=args.topk)
     if not results:
         print("No se detectaron tatuajes en la imagen.")

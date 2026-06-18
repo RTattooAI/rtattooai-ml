@@ -1,0 +1,7 @@
+{
+  "_note": "Estandar de operacion del flujo. Valores PROVISIONALES (del Paso 0 sintetico). Recalibra con datos reales: python -m src.embedding.calibrate --positives ... --negatives ...",
+  "det_conf": 0.15,
+  "det_iou": 0.45,
+  "match_threshold": 0.55,
+  "match_margin": 0.05
+}

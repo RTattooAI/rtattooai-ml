@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.shared import paths
-from src.embedding.identify import TattooIdentifier, GALLERY_NPZ, DETECTOR
+from src.embedding.identify import TattooIdentifier, GALLERY_NPZ, DETECTOR, load_config
 
 st.set_page_config(page_title="RTattooAI — Flujo completo", page_icon="🔎", layout="wide")
 
@@ -68,18 +68,24 @@ if not GALLERY_NPZ.exists() or not DETECTOR.exists():
     )
     st.stop()
 
+_cfg = load_config()
 with st.sidebar:
     st.header("⚙️ Configuración")
-    conf = st.slider("Confianza detección (YOLO)", 0.05, 0.95, 0.25, 0.05)
-    iou = st.slider("IoU (NMS)", 0.1, 0.9, 0.45, 0.05)
-    threshold = st.slider("Umbral de coincidencia (coseno)", 0.1, 0.9, 0.45, 0.01,
+    st.caption("Defaults = estándar de `match_config.json` (recalibrable).")
+    conf = st.slider("Confianza detección (YOLO)", 0.05, 0.95, float(_cfg["det_conf"]), 0.05)
+    iou = st.slider("IoU (NMS)", 0.1, 0.9, float(_cfg["det_iou"]), 0.05)
+    threshold = st.slider("Umbral de coincidencia (coseno)", 0.1, 0.9,
+                          float(_cfg["match_threshold"]), 0.01,
                           help="Por encima = 'posible banda'. Calíbralo con fotos reales.")
+    margin = st.slider("Margen top1−top2", 0.0, 0.3, float(_cfg["match_margin"]), 0.01,
+                       help="El top-1 debe superar al top-2 por esto (evita falsos por 'empate').")
     topk = st.slider("Top-K mostrados", 1, 8, 3)
     st.divider()
     st.markdown("**Flujo:** detectar → recortar → huella (DINOv2) → coseno vs galería.")
 
 ident = load_identifier(threshold)
-ident.threshold = threshold   # respeta el slider sin recargar el modelo
+ident.threshold = threshold   # respeta los sliders sin recargar el modelo
+ident.margin = margin
 thumbs = gallery_thumbs()
 st.caption(f"Galería: {len(ident.names)} tatuajes de banda.")
 
