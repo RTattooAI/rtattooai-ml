@@ -306,6 +306,16 @@ del navegador). En la barra lateral se ajustan confianza e IoU. Para usar la
 **cámara del celular**, abre en el teléfono la *Network URL* que imprime
 Streamlit (mismo WiFi, p. ej. `http://192.168.x.x:8501`).
 
+**Flujo completo (detección + identificación):**
+```powershell
+streamlit run app/streamlit_full.py
+```
+Detecta el tatuaje, lo recorta, saca su embedding (DINOv2) y muestra el **top-K
+de la galería de bandas** con su similitud y un veredicto ("posible banda X" /
+"ninguna conocida"). Requiere `models/gallery_dinov2.npz` (genera con
+`python -m src.embedding.step0_baseline`). Consulta por CLI:
+`python -m src.embedding.identify --image foto.jpg`.
+
 > Es una demo de **apoyo preliminar**: muestra cajas y confianzas; no es
 > identificación definitiva.
 
