@@ -66,7 +66,7 @@ CAM_DIST = (3.0, 4.2)          # lo bastante lejos para que el plano llene el cu
 CAM_AZIMUTH = (-55, 55)        # grados (más variación de ángulo)
 CAM_ELEV = (-45, 45)
 CAM_ROLL = (-15, 15)
-TAT_SCALE = (0.25, 0.42)       # fracción del plano (con plano grande = deja margen de piel)
+TAT_SCALE = (0.30, 0.50)       # fracción del plano que ocupa el tatuaje (centrado, con margen)
 TAT_ROT = (-25, 25)            # grados
 TAT_OFFSET = 0.04              # casi centrado (evita que el tatuaje "se salga")
 TAT_OPACITY = (0.55, 1.0)      # incluye algo de decoloración leve
@@ -129,13 +129,21 @@ def make_skin_material(plane, tattoo_img):
     skin_rgb.outputs[0].default_value = (0.8, 0.6, 0.5, 1)
 
     texcoord = nt.nodes.new("ShaderNodeTexCoord")
+    # Sándwich restar/sumar 0.5 -> escala y rotación ocurren ALREDEDOR DEL CENTRO
+    # del plano, así el tatuaje queda centrado sin importar la escala.
+    sub = nt.nodes.new("ShaderNodeVectorMath"); sub.operation = "SUBTRACT"
+    sub.inputs[1].default_value = (0.5, 0.5, 0.0)
+    nt.links.new(texcoord.outputs["UV"], sub.inputs[0])
     mapping = nt.nodes.new("ShaderNodeMapping"); mapping.name = "TatMapping"
-    nt.links.new(texcoord.outputs["UV"], mapping.inputs["Vector"])
+    nt.links.new(sub.outputs["Vector"], mapping.inputs["Vector"])
+    add = nt.nodes.new("ShaderNodeVectorMath"); add.operation = "ADD"
+    add.inputs[1].default_value = (0.5, 0.5, 0.0)
+    nt.links.new(mapping.outputs["Vector"], add.inputs[0])
 
     tex = nt.nodes.new("ShaderNodeTexImage"); tex.name = "TatTex"
     tex.image = tattoo_img
     tex.extension = "CLIP"     # fuera del tatuaje = transparente, no se repite
-    nt.links.new(mapping.outputs["Vector"], tex.inputs["Vector"])
+    nt.links.new(add.outputs["Vector"], tex.inputs["Vector"])
 
     # máscara del tatuaje: alpha (o 1-luminancia si es fondo blanco)
     opacity = nt.nodes.new("ShaderNodeValue"); opacity.name = "TatOpacity"
@@ -222,12 +230,13 @@ def vary(mat, bend, sun, rng):
         min(max(skin[0] + tint, 0), 1), skin[1], min(max(skin[2] - tint, 0), 1), 1)
     nt.nodes["TatOpacity"].outputs[0].default_value = rng.uniform(*TAT_OPACITY)
     mp = nt.nodes["TatMapping"]
+    # Escala del MAPEO = 1/fracción: el tatuaje ocupa esa fracción del plano,
+    # centrado (por el sándwich). Location solo aplica un jitter pequeño.
     s = 1.0 / rng.uniform(*TAT_SCALE)
     mp.inputs["Scale"].default_value = (s, s, 1)
     mp.inputs["Rotation"].default_value[2] = radians(rng.uniform(*TAT_ROT))
-    off = (1 - 1 / s) / 2
-    mp.inputs["Location"].default_value[0] = off + rng.uniform(-TAT_OFFSET, TAT_OFFSET)
-    mp.inputs["Location"].default_value[1] = off + rng.uniform(-TAT_OFFSET, TAT_OFFSET)
+    mp.inputs["Location"].default_value[0] = rng.uniform(-TAT_OFFSET, TAT_OFFSET)
+    mp.inputs["Location"].default_value[1] = rng.uniform(-TAT_OFFSET, TAT_OFFSET)
     bend.angle = radians(rng.uniform(*BEND_ANGLE))
     if sun:
         sun.data.energy = rng.uniform(*LIGHT_ENERGY)
