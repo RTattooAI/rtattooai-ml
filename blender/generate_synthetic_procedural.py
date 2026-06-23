@@ -32,8 +32,8 @@ from mathutils import Vector
 
 # ========================= CONFIG =========================
 # Carpeta con los PNG de los tatuajes (idealmente con fondo transparente).
-INPUT_TATTOOS = r"C:/ruta/a/gang_tattoos"          # <-- EDITA (p.ej. tu datasets/gang_tattoos)
-OUTPUT_PATH   = r"C:/ruta/a/OUTPUT"                # <-- EDITA
+INPUT_TATTOOS = r"C:/Users/Ricky/Documents/GitHub/rtattooai-ml/datasets/gang_tattoos"          # <-- EDITA (p.ej. tu datasets/gang_tattoos)
+OUTPUT_PATH   = r"C:/Users/Ricky/Documents/GitHub/rtattooai-ml/datasets/output/gang_tattoos_out"                # <-- EDITA
 CROPS_PATH    = os.path.join(OUTPUT_PATH, "crops")
 MANIFEST_PATH = os.path.join(OUTPUT_PATH, "manifest.csv")
 
@@ -57,18 +57,22 @@ SKIN_COLORS = [
     (0.52, 0.35, 0.25), (0.40, 0.26, 0.18), (0.90, 0.74, 0.62),
 ]
 
+# Tamaño del plano de piel. GRANDE a propósito: así siempre llena el cuadro de
+# piel y el tatuaje (centrado) nunca queda fuera de encuadre.
+PLANE_SIZE = 4.0
+
 # Rangos de variación
-CAM_DIST = (2.2, 3.4)
-CAM_AZIMUTH = (-35, 35)        # grados
-CAM_ELEV = (-30, 30)
-CAM_ROLL = (-12, 12)
-TAT_SCALE = (0.55, 0.95)       # fracción del plano que ocupa el tatuaje
-TAT_ROT = (-20, 20)            # grados
-TAT_OFFSET = 0.12              # jitter de posición (uv)
-TAT_OPACITY = (0.75, 1.0)
+CAM_DIST = (3.0, 4.2)          # lo bastante lejos para que el plano llene el cuadro
+CAM_AZIMUTH = (-55, 55)        # grados (más variación de ángulo)
+CAM_ELEV = (-45, 45)
+CAM_ROLL = (-15, 15)
+TAT_SCALE = (0.25, 0.42)       # fracción del plano (con plano grande = deja margen de piel)
+TAT_ROT = (-25, 25)            # grados
+TAT_OFFSET = 0.04              # casi centrado (evita que el tatuaje "se salga")
+TAT_OPACITY = (0.55, 1.0)      # incluye algo de decoloración leve
 LIGHT_ENERGY = (2.0, 7.0)
 LIGHT_TEMP_TINT = 0.12         # variación cálido/frío
-BEND_ANGLE = (-35, 35)         # curvatura de la piel (grados)
+BEND_ANGLE = (-22, 22)         # curvatura de la piel (moderada, no pliega el tatuaje)
 
 
 # ========================= ESCENA =========================
@@ -92,7 +96,7 @@ def set_engine_eevee(scene):
 
 
 def make_skin_plane():
-    bpy.ops.mesh.primitive_plane_add(size=2.0, location=(0, 0, 0))
+    bpy.ops.mesh.primitive_plane_add(size=PLANE_SIZE, location=(0, 0, 0))
     plane = bpy.context.active_object
     plane.name = "SkinPatch"
     # subdividir para que la curvatura se vea suave
