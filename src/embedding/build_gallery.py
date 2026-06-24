@@ -57,6 +57,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Construye la galería de embeddings (multi-vista)")
     ap.add_argument("--sources", nargs="+", default=[str(paths.DATASETS / "gang_tattoos")])
     ap.add_argument("--out", default=str(GALLERY_NPZ))
+    ap.add_argument("--head", default=None, help="ruta a la cabeza afinada (opcional)")
     args = ap.parse_args()
 
     set_seed()
@@ -69,8 +70,8 @@ def main() -> int:
         print("ERROR: no se hallaron imágenes en las fuentes.")
         return 1
 
-    print(f"Embebiendo {len(items)} vistas con DINOv2…")
-    emb = TattooEmbedder()
+    print(f"Embebiendo {len(items)} vistas con DINOv2…" + (" + cabeza" if args.head else ""))
+    emb = TattooEmbedder(head_path=args.head)
     names = [ident for ident, _ in items]
     imgs = [Image.open(p) for _, p in items]
     vecs = emb.embed(imgs, bg=(255, 255, 255))   # (N, dim) L2-norm

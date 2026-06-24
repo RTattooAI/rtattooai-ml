@@ -3,9 +3,9 @@
 - Consultas: **150** (sintéticas (6/tatuaje) — orientativo); distractores: 50.
 - Galería A: 25 vistas | Galería B: 425 vistas.
 
-**A (baseline):** top1=94.0% | genuino μ=0.712 (min 0.322) | no-banda μ=0.281 | brecha=+0.431 | umbral≈0.497
-**B (multi-vista):** top1=100.0% | genuino μ=0.811 (min 0.506) | no-banda μ=0.320 | brecha=+0.492 | umbral≈0.565
+**A (baseline):** top1=95.3% | genuino μ=0.876 (min 0.580) | no-banda μ=0.211 | brecha=+0.666 | umbral≈0.543
+**B (multi-vista):** top1=99.3% | genuino μ=0.909 (min 0.648) | no-banda μ=0.252 | brecha=+0.657 | umbral≈0.580
 
-**Δ top-1:** +6.0 pts | **Δ genuino:** +0.099 | **Δ brecha:** +0.060
+**Δ top-1:** +4.0 pts | **Δ genuino:** +0.032 | **Δ brecha:** -0.009
 
 > ⚠️ Consultas SINTÉTICAS: sirve para ver mecánica/tendencia, no como conclusión final. Repetir con **fotos reales** para la tesis.

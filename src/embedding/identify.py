@@ -26,6 +26,7 @@ from src.embedding.embedder import TattooEmbedder
 GANG_DIR = paths.DATASETS / "gang_tattoos"
 GALLERY_NPZ = paths.MODELS / "gallery_dinov2.npz"
 DETECTOR = paths.MODELS / "yolov8m_best.pt"
+HEAD_PATH = paths.MODELS / "embed_head.pt"   # cabeza afinada; se usa si existe
 CONFIG_PATH = Path(__file__).parent / "match_config.json"
 _FALLBACK = {"det_conf": 0.15, "det_iou": 0.45, "match_threshold": 0.55, "match_margin": 0.05}
 
@@ -52,7 +53,8 @@ class TattooIdentifier:
         data = np.load(str(gallery_path), allow_pickle=True)
         self.gallery = data["embeddings"].astype("float32")      # (G, dim) L2-norm
         self.names = [str(n) for n in data["names"]]
-        self.embedder = embedder or TattooEmbedder()
+        self.embedder = embedder or TattooEmbedder(
+            head_path=str(HEAD_PATH) if HEAD_PATH.exists() else None)
         self.threshold = cfg["match_threshold"] if threshold is None else threshold
         self.margin = cfg["match_margin"] if margin is None else margin
 

@@ -36,6 +36,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Robustez del embedding a la degradación")
     ap.add_argument("--gallery", default=str(paths.DATASETS / "gang_tattoos"))
     ap.add_argument("--reps", type=int, default=3, help="versiones degradadas por nivel")
+    ap.add_argument("--head", default=None, help="ruta a la cabeza afinada (opcional)")
     args = ap.parse_args()
 
     set_seed()
@@ -47,8 +48,9 @@ def main() -> int:
         print(f"ERROR: sin tatuajes en {args.gallery}")
         return 1
     names = [p.stem.replace("-removebg-preview", "") for p in gfiles]
-    print(f"Galería: {len(gfiles)} tatuajes. Cargando DINOv2…")
-    emb = TattooEmbedder()
+    print(f"Galería: {len(gfiles)} tatuajes. Cargando DINOv2…"
+          + (" + cabeza" if args.head else ""))
+    emb = TattooEmbedder(head_path=args.head)
 
     # galería limpia sobre piel
     clean = [composite_on(Image.open(p), SKIN) for p in gfiles]

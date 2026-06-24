@@ -105,11 +105,12 @@ def main() -> int:
     ap.add_argument("--synthetic-queries", type=int, default=0,
                     help="si no hay reales: nº de variaciones sintéticas por tatuaje")
     ap.add_argument("--distractors", type=int, default=60)
+    ap.add_argument("--head", default=None, help="ruta a la cabeza afinada (opcional)")
     args = ap.parse_args()
 
     set_seed()
     rng = np.random.RandomState(SEED)
-    emb = TattooEmbedder()
+    emb = TattooEmbedder(head_path=args.head)
 
     # consultas
     if args.queries:
