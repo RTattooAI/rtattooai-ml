@@ -1,0 +1,40 @@
+# Contexto de build del servicio de inferencia (serving/Dockerfile).
+# Sólo necesitamos: src/, serving/, y los artefactos de models/ que el
+# servicio carga (yolov8m_best.onnx, embed_head.pt, gallery_dinov2.npz).
+
+.git/
+.gitignore
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+datasets/
+runs/
+wandb/
+notebooks/
+blender/
+app/
+reports/
+
+*.log
+*.mp4
+*.avi
+
+# Checkpoints/pesos que el servicio NO usa (sólo necesita el .onnx exportado)
+yolo26n.pt
+yolov8s.pt
+yolov8m.pt
+models/yolov8m_best.pt
+models/yolov8s_best.pt
+models/gallery_dinov2.backup.npz
+
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
