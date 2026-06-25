@@ -3,7 +3,7 @@
 Endpoints (API_CONTRACT.md, sección A):
   GET  /health
   POST /identify  (image, top_k opcional)
-  POST /enroll    (image, band)
+  POST /enroll    (image, band opcional — vacío = identidad sin banda asignada)
 
 Arranca con:
     uvicorn serving.app:app --host 0.0.0.0 --port $PORT
@@ -49,7 +49,7 @@ async def identify(image: UploadFile = File(...), top_k: int = Form(config.DEFAU
 
 
 @app.post("/enroll", response_model=EnrollResponse)
-async def enroll(image: UploadFile = File(...), band: str = Form(...)) -> dict:
+async def enroll(image: UploadFile = File(...), band: str = Form("")) -> dict:
     data = await image.read()
     img = _read_image(data)
     return service.enroll(img, band=band)
