@@ -8,8 +8,8 @@
 | Punto | Estado | Detalle |
 |---|---|---|
 | GPU de entrenamiento | ✅ Resuelto | NVIDIA GeForce RTX 3070 Ti Laptop GPU, 8 GB VRAM, local (no Colab/Azure). Fuente: `runs_train.log` / `runs_train_resume.log` (línea `GPU detectada: ...`). |
-| vCPU/RAM del Container App de Azure | ❓ Pendiente — decisión del usuario | No hay despliegue real todavía, solo `serving/Dockerfile`. Falta elegir el plan/SKU de Azure Container Apps. |
-| Latencia ms/img en producción | ❓ Pendiente — falta medir en el entorno real de despliegue | No hay benchmark corrido sobre el Container App real; se puede medir localmente con `serving/` una vez se decida el hardware de destino. |
+| vCPU/RAM del Container App de Azure | ✅ Resuelto (recomendación lista para desplegar) | **1 vCPU / 2 GiB**, plan Consumption, `min-replicas=0` (scale-to-zero) para quedarse dentro del grant gratis (180k vCPU-s + 360k GiB-s/mes, válido en cualquier cuenta incl. Azure for Students). Script listo: `serving/deploy/azure_deploy.sh` (ver `serving/deploy/README.md` para el detalle de costos — todo gratis salvo ACR Basic ~U$5/mes). Falta correrlo con la cuenta real del usuario para obtener la cifra de producción definitiva. |
+| Latencia ms/img en producción | ⚠️ Medido localmente como proxy | `reports/serving_latency_local.md`: ~950-1300 ms/imagen (mediana), p95 ~2.5-2.8s, en CPU local (proxy de 1 vCPU con hilos limitados a 1). Pendiente re-medir contra el Container App real una vez corrido `azure_deploy.sh` (el script imprime el comando `curl` para hacerlo). |
 | URL pública del repo | ❓ Pendiente — decisión del usuario | Remoto: `https://github.com/RTattooAI/rtattooai-ml.git`. La API de GitHub devuelve 404 sin auth → **actualmente privado**. Decidir si se hace público o se cita como "disponible bajo solicitud". |
 
 ## Dataset
@@ -24,7 +24,7 @@
 
 | Punto | Estado | Detalle |
 |---|---|---|
-| Tamaño final de la galería | ⚠️ Parcial | `models/gallery_dinov2.npz`: 25 identidades × 17 vistas (425 vectores) — es el estado ACTUAL de producción. Falta confirmar si es el número definitivo para la entrega. |
+| Tamaño final de la galería | ✅ Resuelto | `models/gallery_dinov2.npz`: **25 identidades × 17 vistas (425 vectores) — confirmado como número DEFINITIVO** para la entrega. |
 | Criterios de curación experta de simbología | ⚠️ Parcial | Sin documentación formal en el repo. Evidencia indirecta: el collage real de Tren de Aragua (`reports/real_photo_validation.md`) coincide con 5 diseños ya curados (estrella, corona, AK-47, reloj, locomotora) — sirve como cita, pero falta el criterio explícito/fuente experta para el resto de los 25. |
 
 ## Métricas
