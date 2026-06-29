@@ -45,11 +45,19 @@ def health() -> dict:
 async def identify(image: UploadFile = File(...), top_k: int = Form(config.DEFAULT_TOP_K)) -> dict:
     data = await image.read()
     img = _read_image(data)
-    return service.identify(img, top_k=top_k)
+    try:
+        return service.identify(img, top_k=top_k)
+    except OSError as exc:
+        # Image.open() es perezoso: una imagen truncada/corrupta puede pasar la
+        # validación inicial y fallar recién al decodificar los píxeles (convert/load).
+        raise HTTPException(status_code=400, detail=f"Imagen inválida o corrupta: {exc}") from exc
 
 
 @app.post("/enroll", response_model=EnrollResponse)
 async def enroll(image: UploadFile = File(...), band: str = Form("")) -> dict:
     data = await image.read()
     img = _read_image(data)
-    return service.enroll(img, band=band)
+    try:
+        return service.enroll(img, band=band)
+    except OSError as exc:
+        raise HTTPException(status_code=400, detail=f"Imagen inválida o corrupta: {exc}") from exc

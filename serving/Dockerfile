@@ -13,6 +13,11 @@ FROM python:3.14-slim
 
 WORKDIR /app
 
+# HOME=/app desde el inicio: el cache de pip/timm (~/.cache) queda bajo /app,
+# que se le entrega a appuser mas abajo (si no, el cache quedaria en /root,
+# illegible para el usuario sin privilegios y forzaria red en cada arranque).
+ENV HOME=/app
+
 # libgl1/libglib2.0-0: requeridos por opencv-python (dependencia de ultralytics)
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libgl1 \
@@ -33,8 +38,15 @@ COPY src ./src
 COPY serving ./serving
 COPY models ./models
 
+RUN useradd --uid 1000 --home-dir /app --no-create-home --shell /usr/sbin/nologin appuser \
+    && chown -R appuser:appuser /app
+USER appuser
+
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
 EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD python -c "import urllib.request,os; urllib.request.urlopen(f'http://127.0.0.1:{os.environ.get(\"PORT\",8000)}/health', timeout=3)" || exit 1
 
 CMD ["sh", "-c", "uvicorn serving.app:app --host 0.0.0.0 --port ${PORT}"]
