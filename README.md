@@ -1,4 +1,4 @@
-# RTattooAI — ML (Detección de Tatuajes con YOLOv8)
+# RTattooAI — ML (Detección + Identificación de Tatuajes)
 
 Repositorio de **Machine Learning** del proyecto **RTattooAI**: un sistema de
 reconocimiento de tatuajes por visión por computadora para apoyar a la
@@ -9,15 +9,23 @@ asociados a bandas organizadas.
 > identificación definitiva.** Toda salida debe interpretarse como una
 > sugerencia que requiere validación humana.
 
-El sistema tiene **dos etapas de IA**:
+El sistema tiene **dos etapas de IA**, ambas implementadas y medidas:
 
 1. **Detección (YOLOv8)** — localiza el tatuaje en la imagen (bounding box).
-   Una sola clase: `tatuaje`. **Foco de este repo / esta etapa.**
-2. **Identificación (CNN de embeddings + similitud coseno)** — vendrá después.
-   La carpeta [`src/embedding/`](src/embedding/) queda preparada como placeholder.
+   Una sola clase: `tatuaje`.
+2. **Identificación (DINOv2 + cabeza afinada + galería)** — recorta el
+   tatuaje detectado, extrae un embedding y lo compara por similitud coseno
+   contra una galería de tatuajes de bandas conocidas, con rechazo open-set
+   (umbral + margen). Ver [`src/embedding/`](src/embedding/).
 
-El modelo final se exporta a **ONNX** para que lo consuma un backend en
-**ASP.NET Core** (vive en otro repositorio). Este repo solo produce el `.onnx`.
+Ambas etapas se exponen juntas a través de un microservicio FastAPI
+(`serving/`) desplegado en Azure Container Apps, que es el que consume el
+backend en ASP.NET Core (otro repositorio). Este repo entrena los modelos,
+los exporta (ONNX para el detector, `.pt` para la cabeza del embedder) y
+contiene el servicio que los sirve.
+
+Este repositorio es uno de los tres que componen el sistema completo. Ver
+[Repositorios relacionados](#repositorios-relacionados).
 
 ---
 
@@ -30,9 +38,13 @@ El modelo final se exporta a **ONNX** para que lo consuma un backend en
 | Descarga de datasets (Roboflow) | ✅ 8 fuentes (~21.8k crudas) |
 | Unificación + dedup (7006 imgs únicas) | ✅ [reports/dataset_summary.md](reports/dataset_summary.md) |
 | DeMSI (FER/Zagreb) | ⛔ **Descarga manual** (login al repositorio FER) — ver TODO abajo |
-| Entrenamiento (yolov8m + yolov8s, 150 épocas) | ✅ Completado en GPU |
-| Evaluación + reportes | ✅ [reports/metrics.md](reports/metrics.md) |
-| Exportación ONNX | ✅ `models/yolov8m_best.onnx` (opset 12) |
+| Entrenamiento detección (yolov8m + yolov8s, 150 épocas) | ✅ Completado en GPU |
+| Evaluación + reportes de detección | ✅ [reports/metrics.md](reports/metrics.md) |
+| Exportación ONNX del detector | ✅ `models/yolov8m_best.onnx` (opset 12) |
+| Identificación: DINOv2 + galería + cabeza afinada | ✅ Ver [§ Identificación](#-identificación-por-embeddings-dinov2) |
+| Pipeline Blender (galería sintética/multi-vista) | ✅ Ver [`blender/`](blender/) |
+| Microservicio de inferencia (`serving/`) | ✅ Desplegado en Azure Container Apps |
+| Validación con fotos reales a escala (~20-30 fotos etiquetadas) | ⛔ Pendiente — solo N=6 preliminar, ver [§ Identificación](#-identificación-por-embeddings-dinov2) |
 
 > **Resultado (modelo definitivo `yolov8m`, split test held-out):
 > mAP@0.5 = 0.915, precisión = 0.889** → **cumple la meta** (mAP@0.5 > 0.85,
@@ -75,21 +87,31 @@ rtattooai-ml/
 ├── .gitignore                # ignora datasets/, models/, runs/, *.pt, *.onnx, venv
 ├── data.yaml                 # plantilla de config (1 clase: tatuaje)
 ├── src/
-│   ├── detection/            # ETAPA YOLO (foco actual)
+│   ├── detection/            # Etapa 1: YOLOv8
 │   │   ├── download_data.py      # descarga Roboflow (+ chequeo DeMSI)
 │   │   ├── prepare_dataset.py    # unifica a YOLO 1 clase, dedup, splits
 │   │   ├── train.py              # entrenamiento yolov8m + yolov8s
 │   │   ├── evaluate.py           # métricas + reportes
 │   │   └── export_onnx.py        # exportación a ONNX
-│   ├── embedding/            # ETAPA CNN (placeholder)
+│   ├── embedding/            # Etapa 2: DINOv2 + galería + cabeza afinada
+│   │   ├── embedder.py           # extractor DINOv2 + cabeza opcional
+│   │   ├── build_gallery.py      # construye la galería multi-vista
+│   │   ├── identify.py           # identifica un tatuaje en una imagen
+│   │   ├── finetune_head.py      # fine-tuning contrastivo de la cabeza
+│   │   ├── calibrate.py          # calibra umbral + margen con fotos reales
+│   │   └── robustness_test.py    # robustez a degradación
 │   └── shared/               # paths, seeds, helpers de métricas
+├── blender/                  # Generación sintética de vistas (galería)
+├── serving/                  # Microservicio FastAPI (detección + identificación)
+├── app/                      # Demos Streamlit
 ├── datasets/  (gitignored)
 │   ├── raw/                  # cada fuente descargada sin tocar
-│   ├── unified/              # dataset fusionado final (YOLO) + data.yaml
-│   └── real_test/            # imágenes reales del contexto peruano (vacío)
-├── models/    (gitignored)   # pesos .pt y .onnx
+│   ├── unified/               # dataset fusionado final (YOLO) + data.yaml
+│   ├── gang_tattoos/          # diseños limpios de la galería de bandas
+│   └── real_test/             # imágenes reales del contexto peruano (vacío)
+├── models/    (gitignored)   # yolov8m_best.onnx, embed_head.pt, gallery_dinov2.npz
 ├── notebooks/
-└── reports/                  # métricas, curvas PR, matriz de confusión
+└── reports/                  # métricas, curvas PR/CMC, ablaciones, validación real
 ```
 
 ---
@@ -293,6 +315,69 @@ var output = results.First().AsTensor<float>(); // [1, 5, 8400]
 
 ---
 
+## 🔎 Identificación por embeddings (DINOv2)
+
+Segunda etapa: toma el recorte que produjo YOLOv8 y decide a qué tatuaje de
+la galería de bandas se parece, o si no se parece a ninguno (`no_match`).
+
+- **Extractor:** DINOv2 ViT-S/14, con una **cabeza contrastiva afinada**
+  (MLP 384→256→128, `src/embedding/finetune_head.py`) que mejora la
+  invarianza a estilo/degradación sobre el embedding crudo.
+- **Galería:** 25 tatuajes de banda × ~17 vistas cada uno (diseño limpio +
+  vistas sintéticas generadas con Blender). La similitud de una identidad es
+  el coseno máximo entre sus vistas.
+- **Veredicto:** `match` si la mejor similitud supera el **umbral (0.55)** y
+  además supera a la segunda mejor por el **margen (0.05)** — si no, `no_match`,
+  devolviendo igual el top-K más cercano para que la persona lo revise.
+
+### Resultados (galería de producción, ver [resumen completo](reports/resumen_modelos_pipeline.md))
+
+| Configuración | Top-1 (sintético) | Coseno genuino medio |
+|---|---:|---:|
+| DINOv2 solo, galería de un solo diseño | 94% | 0.71 |
+| + galería multi-vista (Blender) | 100% | 0.81 |
+| + cabeza afinada (actual) | ~99% | 0.88 |
+
+| Métrica (galería actual, 500 consultas sintéticas) | Valor |
+|---|---:|
+| Top-1 / Top-5 / Top-10 | 98.2% / 99.4% / 100% |
+| mAP de retrieval | 0.988 |
+| FAR / FRR @ ρ=0.55 (operación) | 0.0% / 11.8% |
+| Robustez: top-1 con 60% de degradación | 90% |
+
+**Por qué estos números no cierran la historia:** son sobre consultas
+**sintéticas** (variaciones 2D de los mismos diseños ya vistos en la
+galería) — funcionan como sanity-check del espacio de embeddings, casi un
+techo, no como precisión de campo. La primera validación con **fotos reales
+(N=6)**, incluido un collage de prensa real de tatuajes de Tren de Aragua,
+dio 3/3 negativos correctamente rechazados y 5/5 símbolos icónicos
+identificados (estrella, corona, AK-47, reloj, locomotora); falló 1/2 fotos
+de estilo muy distinto al diseño de catálogo. Detalle completo en
+[reports/real_photo_validation.md](reports/real_photo_validation.md).
+**Pendiente:** validar con ~20-30 fotos reales etiquetadas para una
+estimación de precisión en campo, no solo sintética.
+
+### Pipeline Blender (galería sintética)
+
+[`blender/`](blender/) genera vistas realistas de cada tatuaje (distinta
+zona del cuerpo, tono de piel, ángulo e iluminación) para enriquecer la
+galería de identificación — no aporta a la detección, sino a que el
+embedder reconozca el mismo diseño en condiciones distintas. Guía paso a
+paso en [blender/README.md](blender/README.md) y
+[blender/GUIA_DESDE_CERO.md](blender/GUIA_DESDE_CERO.md).
+
+## 🧩 Servicio de inferencia (`serving/`)
+
+Microservicio **FastAPI** que envuelve ambas etapas (YOLOv8m ONNX +
+DINOv2 + cabeza + galería) detrás de un contrato HTTP simple
+(`/health`, `/identify`, `/enroll`) — es lo que consume el backend
+ASP.NET Core. Desplegado como contenedor interno (sin exponer a internet)
+en Azure Container Apps, junto al backend y frontend. Detalle completo,
+variables de entorno y ejemplos de `curl` en
+[serving/README.md](serving/README.md).
+
+---
+
 ## 🖥️ Demo interactiva (Streamlit)
 
 Probar el modelo con imágenes propias o **una foto tomada al momento** con la cámara:
@@ -329,11 +414,37 @@ de la galería de bandas** con su similitud y un veredicto ("posible banda X" /
 
 ---
 
+## 🏗️ Arquitectura de despliegue
+
+El servicio de inferencia (`serving/`) corre como contenedor **interno** (sin
+exponer a internet) en Azure Container Apps, junto al backend y al frontend.
+Diagrama completo:
+
+![Arquitectura de despliegue](reports/azure_architecture.png)
+
+## Repositorios relacionados
+
+| Repo | Contenido |
+|------|-----------|
+| [`rtattooai-backend`](https://github.com/RTattooAI/rtattooai-backend) | API ASP.NET Core que consume el servicio `serving/` de este repo |
+| [`rtattooai-frontend`](https://github.com/RTattooAI/rtattooai-frontend) | Cliente Angular usado por los analistas |
+
+El contrato de API entre los tres repos vive en
+[`serving/API_CONTRACT.md`](serving/API_CONTRACT.md) (sección A: contrato del
+servicio de inferencia; las secciones B/C/D del contrato backend↔frontend
+están espejadas en los otros dos repos).
+
+---
+
 ## 📝 Próximos pasos
 
-1. Configurar `ROBOFLOW_API_KEY` y ejecutar el pipeline completo → métricas reales.
-2. Integrar **DeMSI** (descarga manual) para comparar directo con el baseline.
+1. Validar la identificación con **~20-30 fotos reales etiquetadas** (la
+   evidencia actual es N=6 preliminar + métricas sintéticas, ver
+   [§ Identificación](#-identificación-por-embeddings-dinov2)).
+2. Integrar **DeMSI** (descarga manual) en el *entrenamiento* del detector,
+   no solo en evaluación cross-dataset, para cerrar la brecha de dominio
+   (0.915 → 0.557 en zero-shot, ver [reports/metrics_demsi.md](reports/metrics_demsi.md)).
 3. Poblar `datasets/real_test/` con imágenes peruanas reales y reportar la
-   brecha sim-to-real.
-4. Implementar la **Etapa 2 (CNN de embeddings + similitud coseno)** en
-   [`src/embedding/`](src/embedding/).
+   brecha sim-to-real de forma sistemática.
+4. Medir la latencia del `serving/` real desplegado en Azure (hoy solo hay
+   benchmark local, ver [reports/serving_latency_local.md](reports/serving_latency_local.md)).
