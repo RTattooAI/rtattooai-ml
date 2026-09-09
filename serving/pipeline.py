@@ -89,6 +89,29 @@ class TattooService:
             "detections": detections,
         }
 
+    def info(self) -> dict:
+        """Composicion exacta del modelo en ejecucion (RF-16).
+
+        El backend la guarda junto a las metricas de cada version para que un
+        resultado ya emitido siempre se pueda atribuir a la configuracion que lo
+        produjo, incluso despues de reentrenar.
+        """
+        return {
+            "model_version": config.MODEL_VERSION,
+            "detector": config.DETECTOR_WEIGHTS.name,
+            "embedder": self.embedder.model.default_cfg.get("architecture", "dinov2-vits14")
+            if hasattr(self.embedder.model, "default_cfg") else "dinov2-vits14",
+            "head": config.HEAD_PATH.name if self.embedder.head is not None else None,
+            "embedding_dim": int(self.embedder.dim),
+            "threshold": self.threshold,
+            "margin": self.margin,
+            "det_conf": config.DET_CONF,
+            "det_iou": config.DET_IOU,
+            "gallery_size": int(self.gallery.embeddings.shape[0]),
+            "gallery_identities": len(set(self.gallery.catalog_ids)),
+            "gallery_bands": len({b for b in self.gallery.bands if b}),
+        }
+
     def enroll(self, image: Image.Image, band: str) -> dict:
         """Genera vistas degradadas, embebe, agrega a la galería persistente y guarda."""
         rgb = image.convert("RGB")

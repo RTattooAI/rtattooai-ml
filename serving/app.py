@@ -2,6 +2,7 @@
 
 Endpoints (API_CONTRACT.md, sección A):
   GET  /health
+  GET  /info      (composición del modelo y de la galería — RF-16)
   POST /identify  (image, top_k opcional)
   POST /enroll    (image, band opcional — vacío = identidad sin banda asignada)
 
@@ -17,7 +18,7 @@ from PIL import Image
 
 from . import config
 from .pipeline import TattooService
-from .schemas import EnrollResponse, HealthResponse, IdentifyResponse
+from .schemas import EnrollResponse, HealthResponse, IdentifyResponse, InfoResponse
 
 app = FastAPI(title="RTattooAI — Servicio de inferencia", version="1.0.0")
 service: TattooService | None = None
@@ -39,6 +40,11 @@ def _read_image(data: bytes) -> Image.Image:
 @app.get("/health", response_model=HealthResponse)
 def health() -> dict:
     return {"status": "ok", "model_version": config.MODEL_VERSION}
+
+
+@app.get("/info", response_model=InfoResponse)
+def info() -> dict:
+    return service.info()
 
 
 @app.post("/identify", response_model=IdentifyResponse)

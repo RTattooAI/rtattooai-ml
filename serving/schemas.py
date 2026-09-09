@@ -11,6 +11,22 @@ class HealthResponse(BaseModel):
     model_version: str
 
 
+class InfoResponse(BaseModel):
+    """Composicion del modelo en ejecucion (RF-16)."""
+    model_version: str
+    detector: str
+    embedder: str
+    head: Optional[str] = None
+    embedding_dim: int
+    threshold: float
+    margin: float
+    det_conf: float
+    det_iou: float
+    gallery_size: int
+    gallery_identities: int
+    gallery_bands: int
+
+
 class BBox(BaseModel):
     x: int
     y: int
