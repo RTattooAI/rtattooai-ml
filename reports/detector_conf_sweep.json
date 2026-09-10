@@ -1,0 +1,69 @@
+{
+  "negativos": 29,
+  "validacion": 300,
+  "tatuajes_etiquetados": 330,
+  "iou_acierto": 0.5,
+  "conf_actual": 0.15,
+  "filas": [
+    {
+      "conf": 0.15,
+      "imagenes_limpias": 0.4828,
+      "cajas_falsas": 23,
+      "recall": 0.9424
+    },
+    {
+      "conf": 0.2,
+      "imagenes_limpias": 0.5172,
+      "cajas_falsas": 19,
+      "recall": 0.9364
+    },
+    {
+      "conf": 0.25,
+      "imagenes_limpias": 0.6207,
+      "cajas_falsas": 16,
+      "recall": 0.9303
+    },
+    {
+      "conf": 0.3,
+      "imagenes_limpias": 0.6552,
+      "cajas_falsas": 14,
+      "recall": 0.9303
+    },
+    {
+      "conf": 0.35,
+      "imagenes_limpias": 0.6897,
+      "cajas_falsas": 13,
+      "recall": 0.9303
+    },
+    {
+      "conf": 0.4,
+      "imagenes_limpias": 0.6897,
+      "cajas_falsas": 12,
+      "recall": 0.9273
+    },
+    {
+      "conf": 0.45,
+      "imagenes_limpias": 0.7586,
+      "cajas_falsas": 10,
+      "recall": 0.9273
+    },
+    {
+      "conf": 0.5,
+      "imagenes_limpias": 0.7931,
+      "cajas_falsas": 9,
+      "recall": 0.9242
+    },
+    {
+      "conf": 0.6,
+      "imagenes_limpias": 0.8966,
+      "cajas_falsas": 4,
+      "recall": 0.9121
+    },
+    {
+      "conf": 0.7,
+      "imagenes_limpias": 0.9655,
+      "cajas_falsas": 2,
+      "recall": 0.9061
+    }
+  ]
+}

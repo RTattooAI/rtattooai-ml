@@ -1,6 +1,6 @@
 {
   "_note": "Calibrado con datos reales (src.embedding.enroll_recall_test). El umbral se elige por tasa de falsos positivos admitida (5 %), no por F1: en una herramienta de apoyo policial senalar a quien no corresponde cuesta mucho mas que no senalar a quien si.",
-  "det_conf": 0.15,
+  "det_conf": 0.6,
   "det_iou": 0.45,
   "match_threshold": 0.7,
   "match_margin": 0.0,
@@ -19,5 +19,6 @@
     "informe": "reports/enroll_recall_head_v2.json"
   },
   "_umbral_depende_del_tamano_de_la_galeria": "MEDIDO: el umbral necesario SUBE conforme crece el catalogo, porque con mas identidades hay mas ocasiones de parecerse a algo por azar. Al 5 % de falsos positivos: 50 identidades -> 0.665 (recall 86 %); 100 -> 0.72 (79 %); 200 -> 0.82 (66 %); 400 -> 0.89 (50 %). Los valores de aqui estan fijados para la galeria actual (25 identidades). RECALIBRAR cuando el catalogo pase de ~100 identidades, o el sistema empezara a aceptar impostores sin que nadie lo note.",
-  "calibrated_for_identities": 25
+  "calibrated_for_identities": 25,
+  "_det_conf": "Subido de 0.15 a 0.60 con datos reales (src.detection.sweep_conf). Con 0.15, en fotografias de personas SIN tatuajes el detector dibujaba alguna caja en el 52 % de las imagenes: se confunde sobre todo con unas decoradas y telas estampadas, y cada caja falsa llega al perito como un tatuaje. Con 0.60 esa proporcion baja al 10 % y la deteccion real solo cae de 94.2 % a 91.2 %. Medido sobre 29 negativos revisados a ojo y 300 imagenes etiquetadas de validacion (IoU 0.5)."
 }
