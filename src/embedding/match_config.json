@@ -1,7 +1,23 @@
 {
-  "_note": "Estandar de operacion del flujo. Valores PROVISIONALES (del Paso 0 sintetico). Recalibra con datos reales: python -m src.embedding.calibrate --positives ... --negatives ...",
+  "_note": "Calibrado con datos reales (src.embedding.enroll_recall_test). El umbral se elige por tasa de falsos positivos admitida (5 %), no por F1: en una herramienta de apoyo policial senalar a quien no corresponde cuesta mucho mas que no senalar a quien si.",
   "det_conf": 0.15,
   "det_iou": 0.45,
-  "match_threshold": 0.55,
-  "match_margin": 0.05
+  "match_threshold": 0.7,
+  "match_margin": 0.0,
+  "review_threshold": 0.55,
+  "_medicion": {
+    "fecha": "2026-09-10",
+    "cabeza": "head-v2 (6800 recortes del split train, 60 epocas)",
+    "protocolo": "200 tatuajes enrolados con el mismo procedimiento del servicio y consultados con versiones degradadas generadas con otro flujo de azar; 200 impostores de fotografias de origen distinto",
+    "auc_coseno_top1": 0.9401,
+    "curva_umbral_por_tamano": {
+      "50": 0.665,
+      "100": 0.72,
+      "200": 0.82,
+      "400": 0.89
+    },
+    "informe": "reports/enroll_recall_head_v2.json"
+  },
+  "_umbral_depende_del_tamano_de_la_galeria": "MEDIDO: el umbral necesario SUBE conforme crece el catalogo, porque con mas identidades hay mas ocasiones de parecerse a algo por azar. Al 5 % de falsos positivos: 50 identidades -> 0.665 (recall 86 %); 100 -> 0.72 (79 %); 200 -> 0.82 (66 %); 400 -> 0.89 (50 %). Los valores de aqui estan fijados para la galeria actual (25 identidades). RECALIBRAR cuando el catalogo pase de ~100 identidades, o el sistema empezara a aceptar impostores sin que nadie lo note.",
+  "calibrated_for_identities": 25
 }

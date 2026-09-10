@@ -5,6 +5,7 @@ de galería con catalog_id/band y reusando el mismo `TattooEmbedder`/`degrade`.
 """
 from __future__ import annotations
 
+import hashlib
 import time
 from pathlib import Path
 
@@ -37,6 +38,56 @@ class TattooService:
         self.gallery.load()
         self.threshold = config.MATCH_THRESHOLD
         self.margin = config.MATCH_MARGIN
+        self.review_threshold = config.MATCH_REVIEW_THRESHOLD
+        self.gallery_warning = self._check_gallery_matches_head()
+
+    def _check_gallery_matches_head(self) -> str | None:
+        """La galeria y la cabeza tienen que ser la misma pareja.
+
+        Los vectores de la galeria solo significan algo en el espacio que produce
+        una cabeza concreta. Con otra cabeza el sistema no falla: sigue devolviendo
+        un mejor candidato y un porcentaje, calculados sobre ruido. Un error que se
+        presenta como respuesta normal es peor que uno que se ve, asi que se avisa
+        en el arranque y en /info.
+        """
+        actual = self._head_fingerprint()
+        esperada = getattr(self.gallery, "head_fingerprint", None)
+
+        if self.gallery.embeddings.shape[0] == 0:
+            return None
+        if esperada is None:
+            return ("La galeria no declara con que cabeza se construyo: no se puede "
+                    "verificar que corresponda al modelo cargado. Reconstruyala con "
+                    "src.embedding.rebuild_gallery.")
+        if esperada != actual:
+            return (f"La galeria se construyo con la cabeza {esperada} y la cargada es "
+                    f"{actual}. Los resultados NO son validos: reconstruya la galeria "
+                    f"con src.embedding.rebuild_gallery.")
+        return None
+
+    def _check_calibration_still_valid(self) -> str | None:
+        """El umbral se calibro para un tamano de galeria concreto.
+
+        Con mas identidades hay mas ocasiones de parecerse a algo por azar, de modo
+        que el mismo umbral deja pasar mas impostores. El aviso es lo que evita que
+        eso ocurra en silencio.
+        """
+        identidades = len(set(self.gallery.catalog_ids))
+        limite = config.CALIBRATED_FOR_IDENTITIES * 2
+
+        if identidades > limite:
+            return (f"La galeria tiene {identidades} identidades y los umbrales se "
+                    f"calibraron para {config.CALIBRATED_FOR_IDENTITIES}. Recalibre con "
+                    f"src.embedding.enroll_recall_test: con el umbral actual el sistema "
+                    f"esta aceptando mas impostores de los previstos.")
+        return None
+
+    @staticmethod
+    def _head_fingerprint() -> str:
+        ruta = config.HEAD_PATH
+        if not ruta.exists():
+            return "sin-cabeza"
+        return hashlib.sha256(ruta.read_bytes()).hexdigest()[:16]
 
     def detect(self, image: Image.Image, conf: float = config.DET_CONF,
                iou: float = config.DET_IOU):
@@ -59,8 +110,18 @@ class TattooService:
         matches = ranked[:top_k]
         top1 = matches[0][2] if matches else -1.0
         top2 = matches[1][2] if len(matches) > 1 else -1.0
-        is_match = bool(matches) and top1 >= self.threshold and (top1 - top2) >= self.margin
-        verdict = "match" if is_match else "no_match"
+
+        # Tres niveles en vez de dos. La franja intermedia existe porque un tatuaje
+        # gastado cae ahi con frecuencia: presentarlo como "sin coincidencia" pierde
+        # informacion util, y presentarlo como coincidencia afirma algo que el
+        # sistema no puede sostener. Se marca para que lo mire una persona.
+        if matches and top1 >= self.threshold and (top1 - top2) >= self.margin:
+            verdict = "match"
+        elif matches and top1 >= self.review_threshold:
+            verdict = "review"
+        else:
+            verdict = "no_match"
+
         return matches, verdict
 
     def identify(self, image: Image.Image, top_k: int = config.DEFAULT_TOP_K) -> dict:
@@ -86,6 +147,7 @@ class TattooService:
             "processing_ms": processing_ms,
             "threshold": self.threshold,
             "margin": self.margin,
+            "review_threshold": self.review_threshold,
             "detections": detections,
         }
 
@@ -105,6 +167,10 @@ class TattooService:
             "embedding_dim": int(self.embedder.dim),
             "threshold": self.threshold,
             "margin": self.margin,
+            "review_threshold": self.review_threshold,
+            "gallery_warning": self.gallery_warning,
+            "calibration_warning": self._check_calibration_still_valid(),
+            "calibrated_for_identities": config.CALIBRATED_FOR_IDENTITIES,
             "det_conf": config.DET_CONF,
             "det_iou": config.DET_IOU,
             "gallery_size": int(self.gallery.embeddings.shape[0]),

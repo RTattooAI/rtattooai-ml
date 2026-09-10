@@ -5,16 +5,21 @@ features a un espacio más invariante a degradación/condiciones, SIN tocar el
 backbone (no se sobreajusta ni se daña su generalidad).
 
 Datos (cada "fuente" = una identidad; sus vistas aumentadas/degradadas = positivos):
-  - ~2000 recortes REALES (datasets/real_crops): diversidad de identidades.
+  - recortes REALES de datasets/real_crops/<split>: diversidad de identidades.
   - 25 tatuajes de banda + sus vistas Blender (datasets/output/.../crops).
 Negativos = el resto del batch. Pérdida: Supervised Contrastive (SupCon).
 Los features de DINOv2 se CACHEAN (backbone congelado) → entrenamiento rápido.
+
+**Sobre el split.** Hasta setiembre de 2026 este script recorría `real_crops`
+entera con rglob, de modo que entrenaba también con `test` y `val`. Cualquier
+métrica medida sobre esos recortes salía optimista, porque la cabeza los había
+visto. Ahora `--split` acota la fuente y su valor por defecto es `train`.
 
 Salida: models/embed_head.pt  (la usa TattooEmbedder con head_path=...)
 
 Uso:
     python -m src.embedding.finetune_head
-    python -m src.embedding.finetune_head --real 2000 --epochs 40
+    python -m src.embedding.finetune_head --real 6800 --k-real 4 --epochs 60
 """
 from __future__ import annotations
 
@@ -39,7 +44,7 @@ HEAD_OUT_PATH = paths.MODELS / "embed_head.pt"
 SKIN_PALETTE = [(241, 194, 167), (224, 172, 138), (198, 134, 100), (141, 85, 58)]
 
 
-def augment_rgb(img: Image.Image, rng: np.random.RandomState) -> Image.Image:
+def augment_rgb(img: Image.Image, rng: np.random.RandomState, max_degrade: float = 0.8) -> Image.Image:
     img = img.convert("RGB")
     img = img.rotate(rng.uniform(-15, 15), expand=False, resample=Image.BICUBIC,
                      fillcolor=(180, 140, 110))
@@ -49,7 +54,9 @@ def augment_rgb(img: Image.Image, rng: np.random.RandomState) -> Image.Image:
     if rng.rand() < 0.4:
         img = img.filter(ImageFilter.GaussianBlur(rng.uniform(0.3, 1.2)))
     if rng.rand() < 0.5:
-        img = degrade(img, rng.uniform(0.1, 0.5), rng)
+        # Hasta 0.8: es el desgaste con el que el sistema fallaba al reconocer un
+        # tatuaje ya enrolado, y la cabeza no lo estaba viendo en entrenamiento.
+        img = degrade(img, rng.uniform(0.1, max_degrade), rng)
     return img
 
 
@@ -67,7 +74,7 @@ def gang_views(design_path: Path, blender_dir: Path, rng) -> list[Image.Image]:
     return views
 
 
-def build_sources(n_real: int, k_real: int, rng):
+def build_sources(n_real: int, k_real: int, rng, split: str = "train", max_degrade: float = 0.8):
     """Devuelve (lista_imagenes, labels_int) con vistas por identidad."""
     imgs, labels = [], []
     lid = 0
@@ -77,8 +84,11 @@ def build_sources(n_real: int, k_real: int, rng):
             imgs.append(v); labels.append(lid)
         lid += 1
     n_gang = lid
-    # reales
-    crops = [p for p in REAL_CROPS.rglob("*.png")]
+    # reales: SOLO el split indicado, para no entrenar con lo que luego se mide
+    origen = REAL_CROPS / split if split != "todo" else REAL_CROPS
+    crops = [p for p in origen.rglob("*.png")]
+    if not crops:
+        raise SystemExit(f"No hay recortes en {origen}")
     rng.shuffle(crops)
     for cp in crops[:n_real]:
         try:
@@ -86,9 +96,9 @@ def build_sources(n_real: int, k_real: int, rng):
         except Exception:  # noqa: BLE001
             continue
         for _ in range(k_real):
-            imgs.append(augment_rgb(base, rng)); labels.append(lid)
+            imgs.append(augment_rgb(base, rng, max_degrade)); labels.append(lid)
         lid += 1
-    print(f"  identidades: {lid} ({n_gang} gang + {lid - n_gang} reales) | vistas: {len(imgs)}")
+    print(f"  identidades: {lid} ({n_gang} gang + {lid - n_gang} reales de '{split}') | vistas: {len(imgs)}")
     return imgs, np.array(labels)
 
 
@@ -107,10 +117,15 @@ def supcon_loss(z, labels, torch, temp=0.1):
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Fine-tuning contrastivo de la cabeza")
-    ap.add_argument("--real", type=int, default=2000, help="nº de recortes reales")
-    ap.add_argument("--k-real", type=int, default=3, help="vistas por recorte real")
-    ap.add_argument("--epochs", type=int, default=40)
-    ap.add_argument("--ids-per-batch", type=int, default=48)
+    ap.add_argument("--real", type=int, default=6800, help="nº de recortes reales")
+    ap.add_argument("--k-real", type=int, default=4, help="vistas por recorte real")
+    ap.add_argument("--split", default="train", choices=["train", "val", "test", "todo"],
+                    help="split de real_crops del que salen los recortes")
+    ap.add_argument("--max-degrade", type=float, default=0.8,
+                    help="degradación máxima en el aumento de datos")
+    ap.add_argument("--epochs", type=int, default=60)
+    ap.add_argument("--ids-per-batch", type=int, default=96,
+                    help="más identidades por lote = negativos más difíciles")
     ap.add_argument("--views-per-id", type=int, default=4)
     ap.add_argument("--lr", type=float, default=1e-3)
     args = ap.parse_args()
@@ -120,7 +135,7 @@ def main() -> int:
     rng = np.random.RandomState(SEED)
 
     print("Construyendo fuentes y vistas…")
-    imgs, labels = build_sources(args.real, args.k_real, rng)
+    imgs, labels = build_sources(args.real, args.k_real, rng, args.split, args.max_degrade)
     print("Cacheando features de DINOv2 (congelado)…")
     emb = TattooEmbedder()
     feats = emb.backbone_features(imgs)            # (M, 384) en CPU
@@ -163,7 +178,14 @@ def main() -> int:
 
     paths.ensure_dirs(paths.MODELS)
     torch.save({"state_dict": head.state_dict(), "hidden": HEAD_HIDDEN,
-                "out": HEAD_OUT, "in_dim": emb.backbone_dim}, HEAD_OUT_PATH)
+                "out": HEAD_OUT, "in_dim": emb.backbone_dim,
+                # Queda registrado con qué se entrenó: sin esto no hay forma de
+                # saber después si una métrica se midió sobre datos ya vistos.
+                "entrenamiento": {"split": args.split, "recortes_reales": args.real,
+                                  "vistas_por_recorte": args.k_real, "epocas": args.epochs,
+                                  "ids_por_lote": args.ids_per_batch,
+                                  "degradacion_maxima": args.max_degrade,
+                                  "identidades": len(ids)}}, HEAD_OUT_PATH)
     print(f"\nCabeza guardada: {HEAD_OUT_PATH}")
     print("Evaluar: python -m src.embedding.robustness_test --head models/embed_head.pt")
     return 0

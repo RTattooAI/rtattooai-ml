@@ -39,6 +39,9 @@ class GalleryStore:
         self.catalog_ids: list[str] = []
         self.bands: list[str] = []
         self.names: list[str] = []
+        # Huella de la cabeza con la que se calcularon estos vectores. Sirve para
+        # detectar que la galeria y el modelo dejaron de ser la misma pareja.
+        self.head_fingerprint: str | None = None
 
     @property
     def _use_blob(self) -> bool:
@@ -72,14 +75,18 @@ class GalleryStore:
         self.catalog_ids = [str(c) for c in data["catalog_ids"]]
         self.bands = [str(b) for b in data["bands"]]
         self.names = [str(n) for n in data["names"]] if "names" in data else list(self.catalog_ids)
+        self.head_fingerprint = str(data["head_fingerprint"]) if "head_fingerprint" in data else None
 
     def save(self) -> None:
         """Persiste el estado actual: local siempre, y Blob si está configurado."""
         self.local_path.parent.mkdir(parents=True, exist_ok=True)
         buf = io.BytesIO()
+        extra = {}
+        if self.head_fingerprint:
+            extra["head_fingerprint"] = np.array(self.head_fingerprint)
         np.savez(buf, embeddings=self.embeddings.astype("float32"),
                  catalog_ids=np.array(self.catalog_ids), bands=np.array(self.bands),
-                 names=np.array(self.names))
+                 names=np.array(self.names), **extra)
         raw_bytes = buf.getvalue()
         self.local_path.write_bytes(raw_bytes)
         if self._use_blob:

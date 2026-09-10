@@ -28,6 +28,12 @@ service: TattooService | None = None
 def _load_service() -> None:
     global service
     service = TattooService()
+    if service.gallery_warning:
+        # Se registra bien visible: es el fallo que de otro modo pasaria inadvertido
+        # porque el servicio sigue respondiendo con normalidad.
+        print("=" * 78, flush=True)
+        print("AVISO DE GALERIA:", service.gallery_warning, flush=True)
+        print("=" * 78, flush=True)
 
 
 def _read_image(data: bytes) -> Image.Image:

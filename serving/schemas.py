@@ -20,6 +20,12 @@ class InfoResponse(BaseModel):
     embedding_dim: int
     threshold: float
     margin: float
+    review_threshold: float
+    # Aviso si la galeria no corresponde a la cabeza cargada; null si todo cuadra.
+    gallery_warning: Optional[str] = None
+    # Aviso si la galeria crecio muy por encima del tamano con el que se calibro.
+    calibration_warning: Optional[str] = None
+    calibrated_for_identities: int = 0
     det_conf: float
     det_iou: float
     gallery_size: int
@@ -44,7 +50,8 @@ class Match(BaseModel):
 class Detection(BaseModel):
     bbox: BBox
     confidence: float
-    verdict: Literal["match", "no_match"]
+    # "review": por encima del umbral de revision pero por debajo del firme.
+    verdict: Literal["match", "review", "no_match"]
     matches: list[Match]
 
 
@@ -55,6 +62,7 @@ class IdentifyResponse(BaseModel):
     processing_ms: int
     threshold: float
     margin: float
+    review_threshold: float
     detections: list[Detection]
 
 

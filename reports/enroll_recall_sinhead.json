@@ -1,0 +1,57 @@
+{
+  "identidades_enroladas": 200,
+  "impostores": 200,
+  "cabeza": false,
+  "dim": 384,
+  "por_nivel": {
+    "0.0": {
+      "top1": 1.0,
+      "similitud_media": 0.9354,
+      "margen_medio": 0.2588
+    },
+    "0.2": {
+      "top1": 0.995,
+      "similitud_media": 0.8986,
+      "margen_medio": 0.2236
+    },
+    "0.4": {
+      "top1": 0.9,
+      "similitud_media": 0.8368,
+      "margen_medio": 0.1364
+    },
+    "0.6": {
+      "top1": 0.695,
+      "similitud_media": 0.8048,
+      "margen_medio": 0.0737
+    },
+    "0.8": {
+      "top1": 0.265,
+      "similitud_media": 0.7967,
+      "margen_medio": 0.0251
+    }
+  },
+  "impostores_similitud": {
+    "media": 0.7118,
+    "p95": 0.8996,
+    "max": 0.9786
+  },
+  "operacion_actual": {
+    "threshold": 0.55,
+    "margin": 0.05,
+    "f1": 0.766,
+    "precision": 0.9262,
+    "recall": 0.653,
+    "tp": 653,
+    "fp": 52
+  },
+  "operacion_optima": {
+    "threshold": 0.68,
+    "margin": 0.0,
+    "f1": 0.8055,
+    "precision": 0.862,
+    "recall": 0.756,
+    "tp": 756,
+    "fp": 121,
+    "fn": 244
+  }
+}
