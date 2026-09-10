@@ -1,69 +1,69 @@
 {
-  "negativos": 29,
-  "validacion": 300,
-  "tatuajes_etiquetados": 330,
+  "negativos": 44,
+  "validacion": 400,
+  "tatuajes_etiquetados": 441,
   "iou_acierto": 0.5,
-  "conf_actual": 0.15,
+  "conf_actual": 0.6,
   "filas": [
     {
       "conf": 0.15,
-      "imagenes_limpias": 0.4828,
-      "cajas_falsas": 23,
-      "recall": 0.9424
+      "imagenes_limpias": 0.4318,
+      "cajas_falsas": 46,
+      "recall": 0.9478
     },
     {
       "conf": 0.2,
-      "imagenes_limpias": 0.5172,
-      "cajas_falsas": 19,
-      "recall": 0.9364
+      "imagenes_limpias": 0.4545,
+      "cajas_falsas": 40,
+      "recall": 0.941
     },
     {
       "conf": 0.25,
-      "imagenes_limpias": 0.6207,
-      "cajas_falsas": 16,
-      "recall": 0.9303
+      "imagenes_limpias": 0.5227,
+      "cajas_falsas": 34,
+      "recall": 0.932
     },
     {
       "conf": 0.3,
-      "imagenes_limpias": 0.6552,
-      "cajas_falsas": 14,
-      "recall": 0.9303
+      "imagenes_limpias": 0.5455,
+      "cajas_falsas": 28,
+      "recall": 0.932
     },
     {
       "conf": 0.35,
-      "imagenes_limpias": 0.6897,
-      "cajas_falsas": 13,
-      "recall": 0.9303
+      "imagenes_limpias": 0.5909,
+      "cajas_falsas": 25,
+      "recall": 0.932
     },
     {
       "conf": 0.4,
-      "imagenes_limpias": 0.6897,
-      "cajas_falsas": 12,
-      "recall": 0.9273
+      "imagenes_limpias": 0.5909,
+      "cajas_falsas": 24,
+      "recall": 0.9297
     },
     {
       "conf": 0.45,
-      "imagenes_limpias": 0.7586,
-      "cajas_falsas": 10,
-      "recall": 0.9273
+      "imagenes_limpias": 0.6818,
+      "cajas_falsas": 17,
+      "recall": 0.9274
     },
     {
       "conf": 0.5,
-      "imagenes_limpias": 0.7931,
-      "cajas_falsas": 9,
-      "recall": 0.9242
+      "imagenes_limpias": 0.7273,
+      "cajas_falsas": 15,
+      "recall": 0.9206
     },
     {
       "conf": 0.6,
-      "imagenes_limpias": 0.8966,
-      "cajas_falsas": 4,
-      "recall": 0.9121
+      "imagenes_limpias": 0.8409,
+      "cajas_falsas": 8,
+      "recall": 0.907
     },
     {
       "conf": 0.7,
-      "imagenes_limpias": 0.9655,
-      "cajas_falsas": 2,
-      "recall": 0.9061
+      "imagenes_limpias": 0.9091,
+      "cajas_falsas": 5,
+      "recall": 0.8957
     }
   ]
 }
