@@ -85,7 +85,19 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Separa los negativos según lo que detecte YOLO")
     ap.add_argument("--conf", type=float, default=None, help="confianza mínima (por defecto, la del sistema)")
     ap.add_argument("--origen", default=str(PENDIENTES))
+    ap.add_argument("--base", default=None,
+                    help="carpeta donde escribir sin_deteccion/con_deteccion/contactos. "
+                         "Por defecto, negativos_personas. Darla distinta es lo que "
+                         "evita que un corpus de entrenamiento acabe mezclado con el "
+                         "banco de pruebas.")
     args = ap.parse_args()
+
+    global SIN_DETECCION, CON_DETECCION, CONTACTOS
+    if args.base:
+        base = Path(args.base)
+        SIN_DETECCION = base / "sin_deteccion"
+        CON_DETECCION = base / "con_deteccion"
+        CONTACTOS = base / "contactos"
 
     origen = Path(args.origen)
     imagenes = sorted(p for p in origen.glob("*") if p.suffix.lower() in {".jpg", ".jpeg", ".png"})
@@ -145,7 +157,7 @@ def main() -> int:
             for r, cs in con
         ],
     }
-    (BASE / "resumen_deteccion.json").write_text(
+    (Path(args.base) if args.base else BASE).joinpath("resumen_deteccion.json").write_text(
         json.dumps(resumen, indent=2, ensure_ascii=False), encoding="utf-8")
 
     print(f"\nHojas de contactos: {len(hojas_sin)} sin detección, {len(hojas_con)} con detección")
