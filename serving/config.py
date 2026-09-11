@@ -17,9 +17,32 @@ load_env()
 #   head-v1: cabeza entrenada con 2000 recortes, split completo (entrenaba tambien
 #            con test, de modo que sus metricas salian optimistas).
 #   head-v2: 6800 recortes del split train, 60 epocas, degradacion hasta 0.8.
-MODEL_VERSION = "yolov8m + dinov2-vits14 + head-v2"
+# El detector se reentreno con negativos duros el 11/09/2026 (bitacora E-12): el
+# archivo se llama igual, asi que si la version no lo dijera no habria forma de
+# saber con cual se resolvio un analisis guardado.
+MODEL_VERSION = os.environ.get(
+    "MODEL_VERSION", "yolov8m-hardneg + dinov2-vits14 + head-v2")
 
 PORT = int(os.environ.get("PORT", "8000"))
+
+def _resolver_dispositivo() -> str:
+    """Donde corre la inferencia. 'auto' usa la GPU si la hay.
+
+    Estaba fijado a CPU en el codigo. Con la GPU disponible el embebedor DINOv2 a
+    518 px pasa de aproximadamente un segundo a decenas de milisegundos, que es la
+    diferencia entre que el analisis en vivo sirva o no.
+    """
+    pedido = os.environ.get("INFER_DEVICE", "auto").strip().lower()
+    if pedido and pedido != "auto":
+        return pedido
+    try:
+        import torch
+        return "cuda:0" if torch.cuda.is_available() else "cpu"
+    except Exception:  # noqa: BLE001
+        return "cpu"
+
+
+INFER_DEVICE = _resolver_dispositivo()
 
 DETECTOR_WEIGHTS = Path(os.environ.get("DETECTOR_WEIGHTS_PATH", str(paths.MODELS / "yolov8m_best.onnx")))
 HEAD_PATH = Path(os.environ.get("HEAD_PATH", str(paths.MODELS / "embed_head.pt")))

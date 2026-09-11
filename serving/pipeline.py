@@ -27,7 +27,7 @@ class TattooService:
         self.detector = YOLO(str(config.DETECTOR_WEIGHTS))
         self.embedder = TattooEmbedder(
             head_path=str(config.HEAD_PATH) if config.HEAD_PATH.exists() else None,
-            device="cpu")
+            device=config.INFER_DEVICE)
         self.gallery = GalleryStore(
             local_path=config.GALLERY_LOCAL_PATH,
             dim=self.embedder.dim,
@@ -94,7 +94,7 @@ class TattooService:
         """[(bbox_xyxy, crop_PIL, det_conf)] de los tatuajes detectados."""
         rgb = image.convert("RGB")
         res = self.detector.predict(rgb, conf=conf, iou=iou, imgsz=640, verbose=False,
-                                    device="cpu")[0]
+                                    device=config.INFER_DEVICE)[0]
         out = []
         if res.boxes is not None:
             for b in res.boxes:
