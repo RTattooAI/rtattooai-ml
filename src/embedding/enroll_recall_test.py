@@ -28,6 +28,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -83,10 +84,33 @@ def consulta_degradada(img: Image.Image, nivel: float, rng: np.random.RandomStat
     return salida
 
 
-def cargar_galeria_base() -> tuple[np.ndarray, list[str]]:
-    if not GALLERY_NPZ.exists():
+def huella_de_la_cabeza() -> str:
+    """Misma huella que usa el servicio para emparejar galeria y cabeza."""
+    ruta = paths.MODELS / "embed_head.pt"
+    if not ruta.exists():
+        return "sin-cabeza"
+    return hashlib.sha256(ruta.read_bytes()).hexdigest()[:16]
+
+
+def cargar_galeria_base(compatible: bool) -> tuple[np.ndarray, list[str]]:
+    """La galeria base solo sirve de distractor si esta en el MISMO espacio.
+
+    Sus vectores se construyeron con una cabeza concreta. Con otro codificador no
+    son distractores dificiles: son direcciones sin relacion, que casi nunca ganan
+    a una coincidencia genuina. Anadirlos entonces no hace la prueba mas dura, la
+    hace mas facil — y el codificador que se este midiendo saldria beneficiado sin
+    que se note, porque la dimension coincide y todo parece normal.
+
+    Es el mismo emparejamiento que el servicio verifica en `/info`; faltaba aqui,
+    que es justamente donde se deciden las cifras que se publican.
+    """
+    if not GALLERY_NPZ.exists() or not compatible:
         return np.zeros((0, 0), dtype="float32"), []
     data = np.load(str(GALLERY_NPZ), allow_pickle=True)
+    esperada = data.get("head_fingerprint")
+    if esperada is not None and str(esperada) != huella_de_la_cabeza():
+        print("  (galeria base descartada: se construyo con otra cabeza)")
+        return np.zeros((0, 0), dtype="float32"), []
     return data["embeddings"].astype("float32"), [str(c) for c in data["catalog_ids"]]
 
 
@@ -101,6 +125,12 @@ def main() -> int:
                          "medir una cabeza distinta de la que la construyo: sus vectores "
                          "viven en otro espacio y serian ruido, no distractores")
     ap.add_argument("--json", default=None, help="ruta donde volcar el resultado")
+    ap.add_argument("--consulta", choices=["sintetica", "ood"], default="sintetica",
+                    help="sintetica: degrade() + encuadre, como siempre. ood: "
+                         "distorsiones que ningun modelo vio al entrenar (JPEG, "
+                         "perspectiva, movimiento, baja resolucion, dominante, ruido). "
+                         "Es la prueba de si un modelo es robusto o solo aprendio a "
+                         "deshacer nuestro simulador.")
     ap.add_argument("--backbone", default=None,
                     help="codificador a medir: dinov2 (por defecto), dinov2:sin-head "
                          "o cnn:<ruta.pt>. Permite comparar arquitecturas con este "
@@ -108,6 +138,13 @@ def main() -> int:
     args = ap.parse_args()
 
     set_seed()
+
+    if args.consulta == "ood":
+        from src.embedding.ood_distortions import consulta_ood
+        generar_consulta = consulta_ood
+        print("Consultas FUERA DE DISTRIBUCION: distorsiones que no aparecen en el entrenamiento")
+    else:
+        generar_consulta = consulta_degradada
 
     # Los recortes se agrupan por fotografia de origen ("by_tatoo__006406_b0",
     # "..._b1" salen de la misma imagen). Si se enrolara un recorte y se usara otro
@@ -164,7 +201,12 @@ def main() -> int:
     print(f"Enrolando {len(originales)} identidades ({len(imagenes)} vistas)…")
     vectores = emb.embed(imagenes)
 
-    base_vec, base_ids = (np.zeros((0, 0), dtype="float32"), []) if args.sin_galeria_base else cargar_galeria_base()
+    # Solo el codificador por defecto comparte espacio con la galeria base.
+    mismo_espacio = args.backbone in (None, "dinov2")
+    if args.backbone and not mismo_espacio:
+        print("  (galeria base descartada: el codificador no es el que la construyo)")
+    base_vec, base_ids = ((np.zeros((0, 0), dtype="float32"), []) if args.sin_galeria_base
+                          else cargar_galeria_base(mismo_espacio))
     if base_vec.shape[0] and base_vec.shape[1] == vectores.shape[1]:
         galeria = np.concatenate([vectores, base_vec], axis=0)
         galeria_ids = ids + base_ids
@@ -183,7 +225,7 @@ def main() -> int:
     genuinas: list[dict] = []
 
     for nivel in PROBE_LEVELS:
-        lote = [consulta_degradada(img, nivel, rng_consulta) for _, img in originales]
+        lote = [generar_consulta(img, nivel, rng_consulta) for _, img in originales]
         vecs = emb.embed(lote)
         for (ident, _), v in zip(originales, vecs):
             p = puntajes(ranking_por_identidad(galeria, galeria_ids, v))
@@ -194,11 +236,21 @@ def main() -> int:
     # --- 3. Consultas impostoras ---------------------------------------------
     impostoras: list[dict] = []
     lote_imp = []
+    # En modo OOD los impostores tambien llegan distorsionados: en uso real TODA
+    # consulta es una foto de telefono, y las imagenes muy degradadas tienden a
+    # parecerse entre si. Consultar impostores limpios contra genuinos distorsionados
+    # separaria por la distorsion, no por la identidad, y el umbral saldria optimista.
+    # En modo sintetico se mantienen limpios, como en todos los informes anteriores.
+    rng_imp = np.random.RandomState(SEED + 555)
+    niveles_imp = [n for n in PROBE_LEVELS if n > 0]
     for ruta in impostores:
         try:
-            lote_imp.append(Image.open(ruta).convert("RGB"))
+            img_imp = Image.open(ruta).convert("RGB")
         except Exception:  # noqa: BLE001
             continue
+        if args.consulta == "ood":
+            img_imp = generar_consulta(img_imp, float(rng_imp.choice(niveles_imp)), rng_imp)
+        lote_imp.append(img_imp)
     if lote_imp:
         vecs = emb.embed(lote_imp)
         for v in vecs:
@@ -318,6 +370,7 @@ def main() -> int:
           f"({actual['fpr']*100:.1f} %)")
 
     resultado = {
+        "consulta": args.consulta,
         "identidades_enroladas": len(originales),
         "impostores": len(impostoras),
         "cabeza": emb.head is not None,
