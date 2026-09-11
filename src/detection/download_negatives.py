@@ -198,7 +198,14 @@ def main() -> int:
     ap.add_argument("--salida", default=str(paths.DATASETS / "negativos_personas" / "pendientes"))
     ap.add_argument("--candidatos", type=int, default=150,
                     help="cuántos títulos pedir por categoría antes de filtrar")
+    ap.add_argument("--categorias", default=None,
+                    help="categorías de Commons separadas por ';'. Por defecto, las de "
+                         "CATEGORIAS. Sirve para reunir un corpus distinto sin tocar el "
+                         "que ya produjo el banco de pruebas.")
     args = ap.parse_args()
+
+    categorias = ([c.strip() for c in args.categorias.split(";") if c.strip()]
+                  if args.categorias else CATEGORIAS)
 
     destino = Path(args.salida)
     destino.mkdir(parents=True, exist_ok=True)
@@ -207,7 +214,7 @@ def main() -> int:
     vistos: set[str] = set()
     descartes: dict[str, int] = {}
 
-    for categoria in CATEGORIAS:
+    for categoria in categorias:
         print(f"\n{categoria}", flush=True)
         try:
             titulos = miembros(categoria, args.candidatos)

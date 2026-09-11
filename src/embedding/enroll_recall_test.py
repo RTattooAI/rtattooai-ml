@@ -101,6 +101,10 @@ def main() -> int:
                          "medir una cabeza distinta de la que la construyo: sus vectores "
                          "viven en otro espacio y serian ruido, no distractores")
     ap.add_argument("--json", default=None, help="ruta donde volcar el resultado")
+    ap.add_argument("--backbone", default=None,
+                    help="codificador a medir: dinov2 (por defecto), dinov2:sin-head "
+                         "o cnn:<ruta.pt>. Permite comparar arquitecturas con este "
+                         "mismo protocolo.")
     args = ap.parse_args()
 
     set_seed()
@@ -130,11 +134,16 @@ def main() -> int:
     print(f"{len(todos)} recortes en {len(origenes)} fotografias de origen; "
           f"{len(a_enrolar)} a enrolar, {len(impostores)} impostores")
 
-    head = None if args.sin_head else (args.head or str(paths.MODELS / "embed_head.pt"))
-    if head and not Path(head).exists():
-        head = None
-    emb = TattooEmbedder(head_path=head)
-    print(f"Embedder: dim={emb.dim}, cabeza={'sí' if emb.head is not None else 'no'}, device={emb.device}")
+    if args.backbone:
+        from src.embedding.backbones import resolver, describir
+        emb = resolver(args.backbone)
+        print(f"Embedder: {describir(emb)}, device={emb.device}")
+    else:
+        head = None if args.sin_head else (args.head or str(paths.MODELS / "embed_head.pt"))
+        if head and not Path(head).exists():
+            head = None
+        emb = TattooEmbedder(head_path=head)
+        print(f"Embedder: dim={emb.dim}, cabeza={'sí' if emb.head is not None else 'no'}, device={emb.device}")
 
     # --- 1. Enrolar -----------------------------------------------------------
     # Flujo de azar propio del enrolamiento.

@@ -72,6 +72,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="Barrido de la confianza mínima del detector")
     ap.add_argument("--val-max", type=int, default=300, help="cuántas imágenes de validación usar")
     ap.add_argument("--json", default="reports/detector_conf_sweep.json")
+    ap.add_argument("--pesos", default=None,
+                    help="pesos alternativos del detector. Sirve para comparar un "
+                         "reentrenamiento con el desplegado sobre los mismos negativos.")
     args = ap.parse_args()
 
     cfg = load_config()
@@ -92,7 +95,12 @@ def main() -> int:
 
     from ultralytics import YOLO
 
-    detector = YOLO(str(DETECTOR))
+    pesos = Path(args.pesos) if args.pesos else DETECTOR
+    if not pesos.exists():
+        print(f"No existen los pesos {pesos}.")
+        return 1
+    print(f"Detector: {pesos}")
+    detector = YOLO(str(pesos))
 
     # Se predice UNA vez con la confianza más baja y luego se filtra: repetir la
     # inferencia por cada umbral multiplicaría el tiempo sin cambiar el resultado.
@@ -155,6 +163,7 @@ def main() -> int:
         "tatuajes_etiquetados": total_reales,
         "iou_acierto": IOU_ACIERTO,
         "conf_actual": cfg["det_conf"],
+        "pesos": str(pesos),
         "filas": filas,
     }, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\nEscrito: {destino}")
