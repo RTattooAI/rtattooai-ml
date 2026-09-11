@@ -81,8 +81,57 @@ class CNNEmbedder:
         return arr[0] if single else arr
 
 
+class FusionEmbedder:
+    """Dos codificadores a la vez: la similitud es la media ponderada de sus cosenos.
+
+    Cada parte devuelve un vector unitario. Si se concatenan escalados por √w,
+
+        [√w · a₁, √(1−w) · a₂] · [√w · b₁, √(1−w) · b₂] = w·cos₁ + (1−w)·cos₂
+
+    y el resultado sigue siendo unitario, así que el resto del sistema — galería,
+    umbral, índice — no tiene que saber que hay dos modelos detrás.
+
+    Por qué puede valer la pena: un modelo generalista congelado y uno entrenado
+    sobre el dominio fallan por motivos distintos. El primero no aprendió qué
+    importa en un tatuaje; el segundo puede haber aprendido nuestro simulador de
+    desgaste más que el desgaste. Donde uno se equivoca, el otro no tiene por qué.
+    """
+
+    def __init__(self, a, b, peso_a: float = 0.5):
+        if not 0.0 < peso_a < 1.0:
+            raise SystemExit(f"El peso de la fusión debe estar entre 0 y 1: {peso_a}")
+        self.a, self.b, self.peso_a = a, b, peso_a
+        self.dim = a.dim + b.dim
+        self.device = getattr(a, "device", "cpu")
+        self.head = True
+        self.nombre = f"fusion({describir(a)} ×{peso_a:g} + {describir(b)} ×{1 - peso_a:g})"
+
+    def embed(self, images, bg=(255, 255, 255)) -> np.ndarray:
+        single = isinstance(images, Image.Image)
+        ea = np.atleast_2d(self.a.embed(images, bg))
+        eb = np.atleast_2d(self.b.embed(images, bg))
+        z = np.concatenate([np.sqrt(self.peso_a) * ea,
+                            np.sqrt(1.0 - self.peso_a) * eb], axis=1).astype("float32")
+        return z[0] if single else z
+
+
 def resolver(spec: str | None):
-    """Convierte la cadena del argumento --backbone en un codificador."""
+    """Convierte la cadena del argumento --backbone en un codificador.
+
+    Fusión: ``fusion:<A>+<B>`` con pesos iguales, o ``fusion:<A>+<B>@0.3`` para dar
+    0.3 a A y 0.7 a B. Por ejemplo ``fusion:dinov2+cnn:models/cnn_scratch.pt``.
+    """
+    if spec and spec.startswith("fusion:"):
+        cuerpo = spec[len("fusion:"):]
+        peso = 0.5
+        if "@" in cuerpo:
+            cuerpo, texto_peso = cuerpo.rsplit("@", 1)
+            peso = float(texto_peso)
+        if "+" not in cuerpo:
+            raise SystemExit("La fusión necesita dos codificadores: fusion:<A>+<B>")
+        spec_a, spec_b = cuerpo.split("+", 1)
+        return FusionEmbedder(resolver(spec_a), resolver(spec_b), peso)
+
     if not spec or spec == "dinov2":
         ruta = paths.MODELS / "embed_head.pt"
         return TattooEmbedder(head_path=str(ruta) if ruta.exists() else None)
@@ -101,6 +150,8 @@ def resolver(spec: str | None):
 
 
 def describir(emb) -> str:
+    if isinstance(emb, FusionEmbedder):
+        return f"{emb.nombre} dim={emb.dim}"
     if isinstance(emb, CNNEmbedder):
         m = emb.meta
         return (f"{emb.nombre} dim={emb.dim} "
