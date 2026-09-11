@@ -57,7 +57,7 @@ PROBE_LEVELS = [0.0, 0.2, 0.4, 0.6, 0.8]
 # que no señalar a quien sí: el falso negativo solo obliga a revisar a mano.
 FPR_OBJETIVO = 0.05
 
-REAL_CROPS_TEST = paths.DATASETS / "real_crops" / "test"
+REAL_CROPS = paths.DATASETS / "real_crops"
 GALLERY_NPZ = paths.MODELS / "gallery_dinov2.npz"
 
 
@@ -125,6 +125,10 @@ def main() -> int:
                          "medir una cabeza distinta de la que la construyo: sus vectores "
                          "viven en otro espacio y serian ruido, no distractores")
     ap.add_argument("--json", default=None, help="ruta donde volcar el resultado")
+    ap.add_argument("--split", default="test", choices=["val", "test"],
+                    help="de donde salen los recortes. Elegir un hiperparametro (por "
+                         "ejemplo el peso de una fusion) mirando 'test' e informar "
+                         "sobre 'test' infla el resultado: para eso esta 'val'.")
     ap.add_argument("--consulta", choices=["sintetica", "ood"], default="sintetica",
                     help="sintetica: degrade() + encuadre, como siempre. ood: "
                          "distorsiones que ningun modelo vio al entrenar (JPEG, "
@@ -150,7 +154,7 @@ def main() -> int:
     # "..._b1" salen de la misma imagen). Si se enrolara un recorte y se usara otro
     # de la misma fotografia como impostor, compartirian piel, luz y fondo: se
     # contarian como falsos positivos cosas que en realidad son el mismo caso.
-    todos = sorted(REAL_CROPS_TEST.rglob("*.png"))
+    todos = sorted((REAL_CROPS / args.split).rglob("*.png"))
     por_origen: dict[str, list[Path]] = {}
     for ruta in todos:
         origen = re.sub(r"_b\d+$", "", ruta.stem)
@@ -371,6 +375,7 @@ def main() -> int:
 
     resultado = {
         "consulta": args.consulta,
+        "split": args.split,
         "identidades_enroladas": len(originales),
         "impostores": len(impostoras),
         "cabeza": emb.head is not None,
