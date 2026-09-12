@@ -26,7 +26,7 @@ MODEL_VERSION = os.environ.get(
 PORT = int(os.environ.get("PORT", "8000"))
 
 def _resolver_dispositivo() -> str:
-    """Donde corre la inferencia. 'auto' usa la GPU si la hay.
+    """Donde corre la CABEZA (torch). 'auto' usa la GPU si la hay.
 
     Estaba fijado a CPU en el codigo. Con la GPU disponible el embebedor DINOv2 a
     518 px pasa de aproximadamente un segundo a decenas de milisegundos, que es la
@@ -42,9 +42,46 @@ def _resolver_dispositivo() -> str:
         return "cpu"
 
 
+def _resolver_dispositivo_detector(pesos) -> str:
+    """Donde corre el DETECTOR (ONNX Runtime), que no tiene por que ser lo mismo.
+
+    onnxruntime-gpu LISTA CUDAExecutionProvider aunque despues no pueda cargarlo.
+    Paso el 11/09/2026: la version 1.30 exige CUDA 13 y la imagen trae la 12.8 que
+    arrastra torch, de modo que el provider fallaba al cargarse, ORT se caia a CPU
+    en silencio, ultralytics le pasaba tensores de GPU y cada peticion moria con
+    "no data transfer registered". Un 500 en produccion por algo que la lista de
+    providers daba por disponible.
+
+    Tampoco basta con que crear la sesion no lance excepcion: pedir
+    providers=["CUDAExecutionProvider"] y que el provider no cargue NO es un error
+    para ORT, que registra el fallo en el log y devuelve una sesion que por dentro
+    corre en CPU. La unica comprobacion que vale es preguntarle a la sesion ya
+    creada que providers quedaron ACTIVOS.
+    """
+    pedido = os.environ.get("DETECTOR_DEVICE", "auto").strip().lower()
+    if pedido and pedido != "auto":
+        return pedido
+    if _resolver_dispositivo() == "cpu":
+        return "cpu"
+    try:
+        import onnxruntime as ort
+        if "CUDAExecutionProvider" not in ort.get_available_providers():
+            return "cpu"
+        opciones = ort.SessionOptions()
+        opciones.log_severity_level = 3
+        sesion = ort.InferenceSession(str(pesos), sess_options=opciones,
+                                      providers=["CUDAExecutionProvider"])
+        return "cuda:0" if "CUDAExecutionProvider" in sesion.get_providers() else "cpu"
+    except Exception:  # noqa: BLE001
+        return "cpu"
+
+
 INFER_DEVICE = _resolver_dispositivo()
 
 DETECTOR_WEIGHTS = Path(os.environ.get("DETECTOR_WEIGHTS_PATH", str(paths.MODELS / "yolov8m_best.onnx")))
+
+# Se resuelve despues de DETECTOR_WEIGHTS porque la comprobacion carga esos pesos.
+DETECTOR_DEVICE = _resolver_dispositivo_detector(DETECTOR_WEIGHTS)
 HEAD_PATH = Path(os.environ.get("HEAD_PATH", str(paths.MODELS / "embed_head.pt")))
 GALLERY_LOCAL_PATH = Path(os.environ.get("GALLERY_LOCAL_PATH", str(paths.MODELS / "gallery_dinov2.npz")))
 

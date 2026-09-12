@@ -94,7 +94,7 @@ class TattooService:
         """[(bbox_xyxy, crop_PIL, det_conf)] de los tatuajes detectados."""
         rgb = image.convert("RGB")
         res = self.detector.predict(rgb, conf=conf, iou=iou, imgsz=640, verbose=False,
-                                    device=config.INFER_DEVICE)[0]
+                                    device=config.DETECTOR_DEVICE)[0]
         out = []
         if res.boxes is not None:
             for b in res.boxes:
