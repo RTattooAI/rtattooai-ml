@@ -1,0 +1,70 @@
+{
+  "negativos": 140,
+  "validacion": 500,
+  "tatuajes_etiquetados": 564,
+  "iou_acierto": 0.5,
+  "conf_actual": 0.6,
+  "pesos": "C:\\Users\\Ricky\\Documents\\GitHub\\rtattooai\\rtattooai-ml\\models\\yolov8m_hardneg.pt",
+  "filas": [
+    {
+      "conf": 0.15,
+      "imagenes_limpias": 0.7,
+      "cajas_falsas": 61,
+      "recall": 0.9273
+    },
+    {
+      "conf": 0.2,
+      "imagenes_limpias": 0.7143,
+      "cajas_falsas": 54,
+      "recall": 0.9238
+    },
+    {
+      "conf": 0.25,
+      "imagenes_limpias": 0.7643,
+      "cajas_falsas": 46,
+      "recall": 0.9202
+    },
+    {
+      "conf": 0.3,
+      "imagenes_limpias": 0.8,
+      "cajas_falsas": 40,
+      "recall": 0.9149
+    },
+    {
+      "conf": 0.35,
+      "imagenes_limpias": 0.8143,
+      "cajas_falsas": 36,
+      "recall": 0.9131
+    },
+    {
+      "conf": 0.4,
+      "imagenes_limpias": 0.8357,
+      "cajas_falsas": 30,
+      "recall": 0.9113
+    },
+    {
+      "conf": 0.45,
+      "imagenes_limpias": 0.8357,
+      "cajas_falsas": 28,
+      "recall": 0.9078
+    },
+    {
+      "conf": 0.5,
+      "imagenes_limpias": 0.8357,
+      "cajas_falsas": 28,
+      "recall": 0.9025
+    },
+    {
+      "conf": 0.6,
+      "imagenes_limpias": 0.8929,
+      "cajas_falsas": 20,
+      "recall": 0.8936
+    },
+    {
+      "conf": 0.7,
+      "imagenes_limpias": 0.9286,
+      "cajas_falsas": 14,
+      "recall": 0.8848
+    }
+  ]
+}

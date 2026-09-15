@@ -20,8 +20,11 @@ load_env()
 # El detector se reentreno con negativos duros el 11/09/2026 (bitacora E-12): el
 # archivo se llama igual, asi que si la version no lo dijera no habria forma de
 # saber con cual se resolvio un analisis guardado.
+# Desde el 14/09/2026 se sirven los pesos .pt en vez del ONNX (bitacora E-13): son los
+# mismos pesos, pero dan otras confianzas en fotos no cuadradas, y el umbral 0.60 se
+# calibro con el .pt. La version lo distingue porque los resultados pueden cambiar.
 MODEL_VERSION = os.environ.get(
-    "MODEL_VERSION", "yolov8m-hardneg + dinov2-vits14 + head-v2")
+    "MODEL_VERSION", "yolov8m-hardneg-pt + dinov2-vits14 + head-v2")
 
 PORT = int(os.environ.get("PORT", "8000"))
 
@@ -82,7 +85,7 @@ def _resolver_dispositivo_detector(pesos) -> str:
 
 INFER_DEVICE = _resolver_dispositivo()
 
-DETECTOR_WEIGHTS = Path(os.environ.get("DETECTOR_WEIGHTS_PATH", str(paths.MODELS / "yolov8m_best.onnx")))
+DETECTOR_WEIGHTS = Path(os.environ.get("DETECTOR_WEIGHTS_PATH", str(paths.MODELS / "yolov8m_hardneg.pt")))
 
 # Se resuelve despues de DETECTOR_WEIGHTS porque la comprobacion carga esos pesos.
 DETECTOR_DEVICE = _resolver_dispositivo_detector(DETECTOR_WEIGHTS)
