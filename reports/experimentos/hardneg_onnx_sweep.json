@@ -1,0 +1,70 @@
+{
+  "negativos": 140,
+  "validacion": 500,
+  "tatuajes_etiquetados": 564,
+  "iou_acierto": 0.5,
+  "conf_actual": 0.6,
+  "pesos": "models\\yolov8m_best.onnx",
+  "filas": [
+    {
+      "conf": 0.15,
+      "imagenes_limpias": 0.8357,
+      "cajas_falsas": 29,
+      "recall": 0.9113
+    },
+    {
+      "conf": 0.2,
+      "imagenes_limpias": 0.8643,
+      "cajas_falsas": 24,
+      "recall": 0.9078
+    },
+    {
+      "conf": 0.25,
+      "imagenes_limpias": 0.8714,
+      "cajas_falsas": 23,
+      "recall": 0.9025
+    },
+    {
+      "conf": 0.3,
+      "imagenes_limpias": 0.9,
+      "cajas_falsas": 19,
+      "recall": 0.9007
+    },
+    {
+      "conf": 0.35,
+      "imagenes_limpias": 0.9,
+      "cajas_falsas": 19,
+      "recall": 0.8989
+    },
+    {
+      "conf": 0.4,
+      "imagenes_limpias": 0.9214,
+      "cajas_falsas": 15,
+      "recall": 0.8954
+    },
+    {
+      "conf": 0.45,
+      "imagenes_limpias": 0.9214,
+      "cajas_falsas": 14,
+      "recall": 0.8918
+    },
+    {
+      "conf": 0.5,
+      "imagenes_limpias": 0.9286,
+      "cajas_falsas": 13,
+      "recall": 0.8865
+    },
+    {
+      "conf": 0.6,
+      "imagenes_limpias": 0.9643,
+      "cajas_falsas": 8,
+      "recall": 0.883
+    },
+    {
+      "conf": 0.7,
+      "imagenes_limpias": 0.9714,
+      "cajas_falsas": 6,
+      "recall": 0.8688
+    }
+  ]
+}

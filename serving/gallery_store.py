@@ -1,10 +1,14 @@
 """Galería persistente (embeddings + catalog_id + band) con backend local o Azure Blob.
 
 Esquema del npz (una fila por VISTA; varias vistas pueden compartir catalog_id):
-  - embeddings : (N, dim) float32, L2-normalizados
-  - catalog_ids: (N,) str   -- "tat_00001", repetido por cada vista de la identidad
-  - bands      : (N,) str   -- banda asociada (constante dentro de un catalog_id)
-  - names      : (N,) str   -- nombre de diseño original (trazabilidad/debug)
+  - embeddings  : (N, dim) float32, L2-normalizados
+  - catalog_ids : (N,) str   -- "tat_00001", repetido por cada vista de la identidad
+  - bands       : (N,) str   -- banda asociada (constante dentro de un catalog_id)
+  - names       : (N,) str   -- nombre de diseño original (trazabilidad/debug)
+  - image_sha256: (N,) str   -- huella de la imagen enrolada; vacía en las filas
+                                anteriores a que existiera. Es lo que permite al
+                                backend comprobar que un código de la galería
+                                corresponde a la misma imagen que su ficha del catálogo.
 
 Backend:
   - Si hay AZURE_STORAGE_CONNECTION_STRING: la galería vive en Blob; se descarga
@@ -18,10 +22,23 @@ frecuencia; basta para no corromper el estado en memoria entre requests).
 from __future__ import annotations
 
 import io
+import shutil
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
+
+
+class CatalogIdOcupado(Exception):
+    """El código pedido ya tiene vectores en la galería.
+
+    Pasó el 11/09/2026: una reconstrucción de la galería dejó fuera un tatuaje que el
+    catálogo seguía teniendo como `tat_00026`, la galería volvió a repartir ese código
+    a otro tatuaje y el catálogo acabó atribuyéndole la banda del primero. Mezclar dos
+    tatuajes bajo un mismo código es peor que rechazar el enrolamiento, así que se
+    rechaza y quien llama elige otro código.
+    """
 
 
 class GalleryStore:
@@ -39,6 +56,7 @@ class GalleryStore:
         self.catalog_ids: list[str] = []
         self.bands: list[str] = []
         self.names: list[str] = []
+        self.image_hashes: list[str] = []
         # Huella de la cabeza con la que se calcularon estos vectores. Sirve para
         # detectar que la galeria y el modelo dejaron de ser la misma pareja.
         self.head_fingerprint: str | None = None
@@ -75,6 +93,8 @@ class GalleryStore:
         self.catalog_ids = [str(c) for c in data["catalog_ids"]]
         self.bands = [str(b) for b in data["bands"]]
         self.names = [str(n) for n in data["names"]] if "names" in data else list(self.catalog_ids)
+        self.image_hashes = ([str(h) for h in data["image_sha256"]] if "image_sha256" in data
+                             else [""] * len(self.catalog_ids))
         self.head_fingerprint = str(data["head_fingerprint"]) if "head_fingerprint" in data else None
 
     def save(self) -> None:
@@ -85,8 +105,9 @@ class GalleryStore:
         if self.head_fingerprint:
             extra["head_fingerprint"] = np.array(self.head_fingerprint)
         np.savez(buf, embeddings=self.embeddings.astype("float32"),
-                 catalog_ids=np.array(self.catalog_ids), bands=np.array(self.bands),
-                 names=np.array(self.names), **extra)
+                 catalog_ids=np.array(self.catalog_ids, dtype=str), bands=np.array(self.bands, dtype=str),
+                 names=np.array(self.names, dtype=str), image_sha256=np.array(self.image_hashes, dtype=str),
+                 **extra)
         raw_bytes = buf.getvalue()
         self.local_path.write_bytes(raw_bytes)
         if self._use_blob:
@@ -104,29 +125,94 @@ class GalleryStore:
         return f"tat_{max_n + 1:05d}"
 
     def append(self, embeddings: np.ndarray, catalog_id: str, band: str,
-               names: list[str] | None = None) -> None:
+               names: list[str] | None = None, image_sha256: str = "") -> None:
         """Agrega vistas (V, dim) con un catalog_id ya conocido y persiste. Thread-safe."""
         with self._lock:
-            self._append_locked(embeddings, catalog_id, band, names)
+            self._append_locked(embeddings, catalog_id, band, names, image_sha256)
 
     def enroll_views(self, embeddings: np.ndarray, band: str,
-                      names: list[str] | None = None) -> str:
-        """Asigna un catalog_id nuevo y agrega las vistas atómicamente (evita que
-        dos enrolamientos concurrentes reciban el mismo id). Devuelve el catalog_id."""
+                     names: list[str] | None = None, catalog_id: str | None = None,
+                     image_sha256: str = "") -> str:
+        """Agrega las vistas atómicamente y devuelve el catalog_id.
+
+        Si `catalog_id` llega, se usa ese y se lanza `CatalogIdOcupado` cuando ya tiene
+        vectores. Sin él, la galería asigna el siguiente libre: es el comportamiento
+        anterior, que no sabe nada de los códigos que existen en el catálogo del backend.
+        """
         with self._lock:
-            catalog_id = self.next_catalog_id()
-            self._append_locked(embeddings, catalog_id, band, names)
-            return catalog_id
+            if catalog_id:
+                if catalog_id in self.catalog_ids:
+                    raise CatalogIdOcupado(catalog_id)
+                elegido = catalog_id
+            else:
+                elegido = self.next_catalog_id()
+            self._append_locked(embeddings, elegido, band, names, image_sha256)
+            return elegido
 
     def _append_locked(self, embeddings: np.ndarray, catalog_id: str, band: str,
-                        names: list[str] | None = None) -> None:
+                       names: list[str] | None = None, image_sha256: str = "") -> None:
         n_views = embeddings.shape[0]
         names = names or [catalog_id] * n_views
         self.embeddings = np.concatenate([self.embeddings, embeddings.astype("float32")], axis=0)
         self.catalog_ids.extend([catalog_id] * n_views)
         self.bands.extend([band] * n_views)
         self.names.extend(names)
+        self.image_hashes.extend([image_sha256] * n_views)
         self.save()
+
+    def remove(self, catalog_id: str) -> int:
+        """Quita todas las vistas de un catalog_id y persiste. Devuelve cuántas quitó.
+
+        Antes de escribir deja una copia fechada del archivo: borrar vectores no tiene
+        vuelta atrás sin la imagen de origen.
+        """
+        with self._lock:
+            conservar = [i for i, cid in enumerate(self.catalog_ids) if cid != catalog_id]
+            quitadas = len(self.catalog_ids) - len(conservar)
+            if quitadas == 0:
+                return 0
+
+            if self.local_path.exists():
+                marca = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+                respaldo = self.local_path.with_name(
+                    f"{self.local_path.stem}.antes-quitar-{catalog_id}-{marca}{self.local_path.suffix}")
+                shutil.copy2(self.local_path, respaldo)
+
+            self.embeddings = (self.embeddings[conservar] if conservar
+                               else np.zeros((0, self.dim), dtype="float32"))
+            self.catalog_ids = [self.catalog_ids[i] for i in conservar]
+            self.bands = [self.bands[i] for i in conservar]
+            self.names = [self.names[i] for i in conservar]
+            self.image_hashes = [self.image_hashes[i] for i in conservar]
+            self.save()
+            return quitadas
+
+    def entries(self) -> list[dict]:
+        """Una entrada por catalog_id, en el orden en que aparecen: vistas y huella."""
+        vistas: dict[str, int] = {}
+        huellas: dict[str, str] = {}
+        for cid, huella in zip(self.catalog_ids, self.image_hashes):
+            vistas[cid] = vistas.get(cid, 0) + 1
+            if huella and not huellas.get(cid):
+                huellas[cid] = huella
+        return [{"catalog_id": cid, "views": n, "image_sha256": huellas.get(cid) or None}
+                for cid, n in vistas.items()]
+
+    def shared_vectors(self) -> list[list[str]]:
+        """Grupos de catalog_id distintos que contienen exactamente el mismo vector.
+
+        Dos tatuajes distintos no producen el mismo vector: si ocurre, es que la misma
+        imagen se enroló bajo dos códigos. Es la huella que dejó el incidente del
+        11/09/2026, y la única forma de verlo en las filas anteriores a la huella de
+        imagen.
+        """
+        if self.embeddings.shape[0] == 0:
+            return []
+        grupos: dict[bytes, set[str]] = {}
+        for fila, cid in zip(np.round(self.embeddings, 5), self.catalog_ids):
+            grupos.setdefault(fila.tobytes(), set()).add(cid)
+        distintos = {tuple(sorted(ids)) for ids in grupos.values() if len(ids) > 1}
+        return [list(ids) for ids in sorted(distintos)]
 
     def search(self, query: np.ndarray) -> list[tuple[str, str, float]]:
         """Coseno contra todas las vistas; máximo por catalog_id. Devuelve

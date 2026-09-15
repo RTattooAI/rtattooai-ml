@@ -178,11 +178,17 @@ class TattooService:
             "gallery_bands": len({b for b in self.gallery.bands if b}),
         }
 
-    def enroll(self, image: Image.Image, band: str) -> dict:
-        """Genera vistas degradadas, embebe, agrega a la galería persistente y guarda."""
+    def enroll(self, image: Image.Image, band: str, catalog_id: str | None = None,
+               image_sha256: str = "") -> dict:
+        """Genera vistas degradadas, embebe, agrega a la galería persistente y guarda.
+
+        `catalog_id` lo elige el backend, que es quien conoce los códigos del catálogo;
+        si ya tiene vectores, la galería lanza `CatalogIdOcupado` sin tocar nada.
+        """
         rgb = image.convert("RGB")
         rng = np.random.RandomState()
         views = [rgb] + [degrade(rgb, level, rng) for level in DEGRADE_LEVELS if level > 0]
         embeddings = self.embedder.embed(views)  # (V, dim) L2-norm
-        catalog_id = self.gallery.enroll_views(embeddings, band=band)
-        return {"catalog_id": catalog_id, "band": band}
+        elegido = self.gallery.enroll_views(embeddings, band=band, catalog_id=catalog_id,
+                                            image_sha256=image_sha256)
+        return {"catalog_id": elegido, "band": band}

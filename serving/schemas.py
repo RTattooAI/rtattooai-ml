@@ -69,3 +69,21 @@ class IdentifyResponse(BaseModel):
 class EnrollResponse(BaseModel):
     catalog_id: str
     band: str
+
+
+class GalleryEntry(BaseModel):
+    catalog_id: str
+    views: int
+    # Huella SHA-256 de la imagen enrolada; null en vistas anteriores a que existiera.
+    image_sha256: Optional[str] = None
+
+
+class GalleryResponse(BaseModel):
+    entries: list[GalleryEntry]
+    # Grupos de códigos distintos que comparten exactamente un mismo vector.
+    shared_vectors: list[list[str]]
+
+
+class RemoveResponse(BaseModel):
+    catalog_id: str
+    removed_views: int

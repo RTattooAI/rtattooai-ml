@@ -63,6 +63,10 @@ def _resolver_dispositivo_detector(pesos) -> str:
         return pedido
     if _resolver_dispositivo() == "cpu":
         return "cpu"
+    # Con pesos de PyTorch el detector corre sobre torch, igual que la cabeza: no hay
+    # ONNX Runtime de por medio y vale el mismo dispositivo.
+    if Path(str(pesos)).suffix.lower() == ".pt":
+        return _resolver_dispositivo()
     try:
         import onnxruntime as ort
         if "CUDAExecutionProvider" not in ort.get_available_providers():
