@@ -60,6 +60,98 @@ def augment_rgb(img: Image.Image, rng: np.random.RandomState, max_degrade: float
     return img
 
 
+def augment_real(img: Image.Image, rng: np.random.RandomState, max_degrade: float = 0.6) -> Image.Image:
+    """Variaciones como las de una foto real distinta: giro libre, volteo, perspectiva,
+    encuadre, luz, desenfoque y compresión. El desgaste sintético pasa a ser una más
+    entre varias (antes era la principal y la cabeza terminó aprendiendo el simulador).
+    """
+    import io
+    img = img.convert("RGB")
+    fondo = tuple(int(c) for c in np.asarray(img).reshape(-1, 3).mean(0))
+    if rng.rand() < 0.5:
+        img = img.rotate(90 * rng.randint(1, 4), expand=True)
+    if rng.rand() < 0.5:
+        img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    img = img.rotate(rng.uniform(-30, 30), expand=True, resample=Image.BICUBIC, fillcolor=fondo)
+    W, H = img.size
+    if rng.rand() < 0.5:                                   # perspectiva
+        d = 0.15
+        src = [(0, 0), (W, 0), (W, H), (0, H)]
+        dst = [(x + rng.uniform(-d, d) * W, y + rng.uniform(-d, d) * H) for x, y in src]
+        A = []
+        for (x, y), (u, v) in zip(dst, src):
+            A += [[x, y, 1, 0, 0, 0, -u * x, -u * y], [0, 0, 0, x, y, 1, -v * x, -v * y]]
+        coef = np.linalg.lstsq(np.array(A, dtype=float), np.array(src, dtype=float).reshape(8), rcond=None)[0]
+        img = img.transform((W, H), Image.PERSPECTIVE, tuple(coef), Image.BICUBIC, fillcolor=fondo)
+    s = rng.uniform(0.75, 1.0)                             # encuadre
+    cw, ch = max(8, int(W * s)), max(8, int(H * s))
+    x0, y0 = rng.randint(0, W - cw + 1), rng.randint(0, H - ch + 1)
+    img = img.crop((x0, y0, x0 + cw, y0 + ch))
+    img = ImageEnhance.Brightness(img).enhance(rng.uniform(0.6, 1.4))
+    img = ImageEnhance.Color(img).enhance(rng.uniform(0.5, 1.4))
+    img = ImageEnhance.Contrast(img).enhance(rng.uniform(0.7, 1.3))
+    if rng.rand() < 0.15:
+        img = img.convert("L").convert("RGB")
+    if rng.rand() < 0.35:
+        img = img.filter(ImageFilter.GaussianBlur(rng.uniform(0.5, 2.0)))
+    if rng.rand() < 0.3:                                   # baja resolución
+        f = rng.uniform(0.3, 0.7)
+        img = img.resize((max(16, int(img.width * f)), max(16, int(img.height * f)))).resize(img.size)
+    if rng.rand() < 0.5:
+        buf = io.BytesIO()
+        img.save(buf, "JPEG", quality=int(rng.uniform(25, 90)))
+        img = Image.open(io.BytesIO(buf.getvalue())).convert("RGB")
+    if rng.rand() < 0.15:
+        img = degrade(img, rng.uniform(0.1, max_degrade), rng)
+    return img
+
+
+def build_sources_manifest(manifiesto: Path, k_real: int, rng, max_degrade: float = 0.6):
+    """Identidades limpias (agrupar_duplicados): las versiones del mismo tatuaje son
+    positivos entre sí y los pares dudosos no se usan como negativos.
+
+    Devuelve (imágenes, etiquetas, ignorar), donde ignorar[l] son las etiquetas que
+    no deben tratarse como negativos de l.
+    """
+    import json
+    m = json.loads(Path(manifiesto).read_text(encoding="utf-8"))
+    imgs, labels = [], []
+    lid = 0
+    for d in sorted(GANG_DIR.glob("*.png")):
+        for v in gang_views(d, BLENDER_CROPS, rng):
+            imgs.append(augment_real(v, rng, max_degrade)); labels.append(lid)
+        lid += 1
+    n_gang = lid
+    origen = REAL_CROPS / "train"
+    for nombre, g in zip(m["recortes"], m["identidad"]):
+        base = Image.open(origen / nombre).convert("RGB")
+        for _ in range(k_real):
+            imgs.append(augment_real(base, rng, max_degrade)); labels.append(n_gang + g)
+    ignorar: dict[int, set] = {}
+    for a, b in m["dudosos"]:
+        la, lb = n_gang + m["identidad"][a], n_gang + m["identidad"][b]
+        if la != lb:
+            ignorar.setdefault(la, set()).add(lb)
+            ignorar.setdefault(lb, set()).add(la)
+    n_id = n_gang + max(m["identidad"]) + 1
+    print(f"  identidades: {n_id} ({n_gang} gang + {n_id - n_gang} reales agrupadas) | vistas: {len(imgs)} "
+          f"| pares dudosos enmascarados: {len(m['dudosos'])}")
+    return imgs, np.array(labels), ignorar
+
+
+def mascara_ignorar(bl, ignorar: dict, torch):
+    """(B, B) bool: True donde el par no debe contar como negativo."""
+    B = len(bl)
+    M = torch.zeros((B, B), dtype=torch.bool, device=bl.device)
+    if not ignorar:
+        return M
+    arr = bl.cpu().numpy()
+    for i, l in enumerate(arr):
+        for o in ignorar.get(int(l), ()):
+            M[i, torch.from_numpy(arr == o).to(bl.device)] = True
+    return M
+
+
 def gang_views(design_path: Path, blender_dir: Path, rng) -> list[Image.Image]:
     name = design_path.stem.replace("-removebg-preview", "")
     design = Image.open(design_path)
@@ -102,12 +194,14 @@ def build_sources(n_real: int, k_real: int, rng, split: str = "train", max_degra
     return imgs, np.array(labels)
 
 
-def supcon_loss(z, labels, torch, temp=0.1):
+def supcon_loss(z, labels, torch, temp=0.1, ignorar=None):
     z = torch.nn.functional.normalize(z, dim=1)
     sim = z @ z.t() / temp
     sim = sim - sim.max(dim=1, keepdim=True).values.detach()
     eye = torch.eye(len(z), device=z.device)
     exp = torch.exp(sim) * (1 - eye)
+    if ignorar is not None:
+        exp = exp * (~ignorar).float()
     log_prob = sim - torch.log(exp.sum(1, keepdim=True) + 1e-9)
     pos = (labels[:, None] == labels[None, :]).float() * (1 - eye)
     mlpp = (pos * log_prob).sum(1) / pos.sum(1).clamp(min=1)
@@ -128,6 +222,10 @@ def main() -> int:
                     help="más identidades por lote = negativos más difíciles")
     ap.add_argument("--views-per-id", type=int, default=4)
     ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--manifiesto", default=None,
+                    help="identidades agrupadas (agrupar_duplicados); activa la aumentación realista")
+    ap.add_argument("--salida", default=str(HEAD_OUT_PATH))
+    ap.add_argument("--hidden", type=int, default=HEAD_HIDDEN, help="ancho de la capa oculta de la cabeza")
     args = ap.parse_args()
 
     set_seed()
@@ -135,7 +233,11 @@ def main() -> int:
     rng = np.random.RandomState(SEED)
 
     print("Construyendo fuentes y vistas…")
-    imgs, labels = build_sources(args.real, args.k_real, rng, args.split, args.max_degrade)
+    ignorar = {}
+    if args.manifiesto:
+        imgs, labels, ignorar = build_sources_manifest(Path(args.manifiesto), args.k_real, rng, args.max_degrade)
+    else:
+        imgs, labels = build_sources(args.real, args.k_real, rng, args.split, args.max_degrade)
     print("Cacheando features de DINOv2 (congelado)…")
     emb = TattooEmbedder()
     feats = emb.backbone_features(imgs)            # (M, 384) en CPU
@@ -149,7 +251,7 @@ def main() -> int:
     print(f"  identidades entrenables (≥2 vistas): {len(ids)}")
 
     device = emb.device
-    head = build_head(emb.backbone_dim).to(device).train()
+    head = build_head(emb.backbone_dim, args.hidden).to(device).train()
     opt = torch.optim.Adam(head.parameters(), lr=args.lr, weight_decay=1e-4)
     feats_dev = feats.to(device)
 
@@ -170,14 +272,14 @@ def main() -> int:
                 idx += take
             bl = labels_t[idx].to(device)
             z = head(feats_dev[idx])
-            loss = supcon_loss(z, bl, torch)
+            loss = supcon_loss(z, bl, torch, ignorar=mascara_ignorar(bl, ignorar, torch) if ignorar else None)
             opt.zero_grad(); loss.backward(); opt.step()
             tot += float(loss)
         if (ep + 1) % 5 == 0 or ep == 0:
             print(f"  época {ep+1:3d}/{args.epochs}  loss={tot/steps:.4f}")
 
     paths.ensure_dirs(paths.MODELS)
-    torch.save({"state_dict": head.state_dict(), "hidden": HEAD_HIDDEN,
+    torch.save({"state_dict": head.state_dict(), "hidden": args.hidden,
                 "out": HEAD_OUT, "in_dim": emb.backbone_dim,
                 # Queda registrado con qué se entrenó: sin esto no hay forma de
                 # saber después si una métrica se midió sobre datos ya vistos.
@@ -185,8 +287,8 @@ def main() -> int:
                                   "vistas_por_recorte": args.k_real, "epocas": args.epochs,
                                   "ids_por_lote": args.ids_per_batch,
                                   "degradacion_maxima": args.max_degrade,
-                                  "identidades": len(ids)}}, HEAD_OUT_PATH)
-    print(f"\nCabeza guardada: {HEAD_OUT_PATH}")
+                                  "identidades": len(ids), "manifiesto": args.manifiesto}}, args.salida)
+    print(f"\nCabeza guardada: {args.salida}")
     print("Evaluar: python -m src.embedding.robustness_test --head models/embed_head.pt")
     return 0
 

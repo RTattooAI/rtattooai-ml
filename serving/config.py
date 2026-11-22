@@ -121,3 +121,39 @@ MATCH_REVIEW_THRESHOLD = float(
 CALIBRATED_FOR_IDENTITIES = int(_match_cfg.get("calibrated_for_identities", 25))
 
 DEFAULT_TOP_K = 5
+
+# ----------------------------------------------------------------- ensamble
+# "ensamble": dos codificadores (generalista DINOv2 + cabeza, especialista CNN) con
+# verificacion por consenso y semaforo conformal. "clasico": el modelo anterior
+# (una cabeza y umbrales fijos 0.55/0.70), que queda disponible para volver atras.
+MODO = os.environ.get("MODO_IDENTIFICACION", _match_cfg.get("modo", "ensamble")).strip().lower()
+
+# Pesos y calibracion viajan DENTRO de la imagen, fuera de /app/models: en Docker esa
+# carpeta es un volumen que solo se precarga la primera vez, y unos pesos nuevos
+# puestos ahi no aparecerian nunca.
+ENSAMBLE_DIR = Path(os.environ.get("ENSAMBLE_DIR", str(paths.MODELS / "ensamble")))
+GENERALISTA_PATH = ENSAMBLE_DIR / "generalista.pt"
+ESPECIALISTA_PATH = ENSAMBLE_DIR / "especialista.pt"
+CALIBRACION_PATH = ENSAMBLE_DIR / "calibracion_desconocidos.npz"
+GALERIA_INICIAL_PATH = ENSAMBLE_DIR / "galeria_inicial.npz"
+
+# La galeria si cambia (se enrola desde la app): vive donde persiste. Nombres propios
+# para no pisar la galeria del modelo clasico, que tiene otra dimension.
+GALERIA_ENSAMBLE_PATH = Path(os.environ.get("GALERIA_ENSAMBLE_PATH",
+                                            str(paths.MODELS / "galeria_ensamble.npz")))
+GALERIA_ENSAMBLE_BLOB = os.environ.get("GALERIA_ENSAMBLE_BLOB", "galeria_ensamble.npz")
+
+# Tasa maxima de desconocidos aceptados que garantiza el semaforo conformal.
+ALFA = float(os.environ.get("ALFA", _match_cfg.get("alfa", 0.01)))
+
+if MODO == "ensamble":
+    # La version la fija construir_ensamble en manifiesto.json: cambia con cada pareja
+    # de pesos, que es lo que el backend necesita para atribuir un analisis guardado.
+    _manifiesto = ENSAMBLE_DIR / "manifiesto.json"
+    _version = None
+    if _manifiesto.exists():
+        import json
+        _version = json.loads(_manifiesto.read_text(encoding="utf-8")).get("version")
+    MODEL_VERSION = os.environ.get(
+        "MODEL_VERSION_ENSAMBLE",
+        f"{_version or 'ensamble'} a={ALFA:g}")

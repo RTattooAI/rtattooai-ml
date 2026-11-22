@@ -39,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.shared import paths
 from src.shared.seeds import set_seed, SEED
-from src.embedding.finetune_head import build_sources, supcon_loss
+from src.embedding.finetune_head import build_sources, build_sources_manifest, mascara_ignorar, supcon_loss
 
 # Resolución de entrada. DINOv2 ViT-S/14 trabaja a 518 px; una ResNet-18 a 224 px
 # es su tamaño nativo y el que usa toda la literatura de la que salen sus pesos.
@@ -55,12 +55,14 @@ MEDIA = np.array([0.485, 0.456, 0.406], dtype="float32")
 DESV = np.array([0.229, 0.224, 0.225], dtype="float32")
 
 
-def construir_red(pesos: str, torch):
+def construir_red(pesos: str, torch, arquitectura: str = "resnet18"):
     """ResNet-18 con una cabeza de proyección, igual de profunda que la de DINOv2."""
     import torch.nn as nn
     from torchvision import models
 
-    if pesos == "imagenet":
+    if arquitectura == "resnet50":
+        red = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2 if pesos == "imagenet" else None)
+    elif pesos == "imagenet":
         red = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
     else:
         red = models.resnet18(weights=None)
@@ -94,6 +96,9 @@ def main() -> int:
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--ids-per-batch", type=int, default=64)
     ap.add_argument("--views-per-id", type=int, default=4)
+    ap.add_argument("--arquitectura", choices=["resnet18", "resnet50"], default="resnet18")
+    ap.add_argument("--manifiesto", default=None,
+                    help="identidades agrupadas (agrupar_duplicados); activa la aumentación realista")
     ap.add_argument("--lr", type=float, default=None,
                     help="por defecto 1e-3 desde cero, 1e-4 al afinar preentrenada")
     args = ap.parse_args()
@@ -110,7 +115,11 @@ def main() -> int:
 
     print(f"=== ResNet-18 · pesos={args.pesos} · lr={lr:g} ===")
     print("Construyendo fuentes y vistas (mismas que la cabeza sobre DINOv2)…")
-    imgs, labels = build_sources(args.real, args.k_real, rng, args.split, args.max_degrade)
+    ignorar = {}
+    if args.manifiesto:
+        imgs, labels, ignorar = build_sources_manifest(Path(args.manifiesto), args.k_real, rng, args.max_degrade)
+    else:
+        imgs, labels = build_sources(args.real, args.k_real, rng, args.split, args.max_degrade)
 
     print(f"Pasando {len(imgs)} vistas a memoria como uint8 {TAM}×{TAM}…")
     datos = a_tensor_uint8(imgs)
@@ -124,7 +133,7 @@ def main() -> int:
     print(f"  identidades entrenables (≥2 vistas): {len(ids)}")
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    red = construir_red(args.pesos, torch).to(device).train()
+    red = construir_red(args.pesos, torch, args.arquitectura).to(device).train()
     n_par = sum(p.numel() for p in red.parameters())
     print(f"  parámetros entrenables: {n_par/1e6:.1f} M   (la cabeza sobre DINOv2: 0.13 M)")
 
@@ -164,7 +173,8 @@ def main() -> int:
 
             with torch.autocast(device_type=device, dtype=torch.float16):
                 z = red(lote_gpu(idx))
-                loss = supcon_loss(z.float(), bl, torch)
+                loss = supcon_loss(z.float(), bl, torch,
+                                   ignorar=mascara_ignorar(bl, ignorar, torch) if ignorar else None)
 
             opt.zero_grad(set_to_none=True)
             escala.scale(loss).backward()
@@ -181,7 +191,7 @@ def main() -> int:
 
     paths.ensure_dirs(paths.MODELS)
     torch.save({
-        "arquitectura": "resnet18",
+        "arquitectura": args.arquitectura,
         "state_dict": red.state_dict(),
         "out": PROJ_OUT,
         "hidden": PROJ_HIDDEN,
@@ -191,7 +201,7 @@ def main() -> int:
             "recortes_reales": args.real, "vistas_por_recorte": args.k_real,
             "epocas": args.epochs, "ids_por_lote": args.ids_per_batch,
             "degradacion_maxima": args.max_degrade, "identidades": len(ids),
-            "lr": lr, "parametros": n_par, "segundos": round(time.time() - t0),
+            "lr": lr, "parametros": n_par, "manifiesto": args.manifiesto, "segundos": round(time.time() - t0),
             "loss_por_epoca": historia,
         },
     }, salida)

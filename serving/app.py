@@ -95,7 +95,7 @@ def gallery() -> dict:
 
 @app.delete("/gallery/{catalog_id}", response_model=RemoveResponse)
 def remove_from_gallery(catalog_id: str) -> dict:
-    quitadas = service.gallery.remove(catalog_id)
+    quitadas = service.remove(catalog_id)
     if quitadas == 0:
         raise HTTPException(status_code=404, detail=f"La galería no tiene vectores con el código {catalog_id}.")
     return {"catalog_id": catalog_id, "removed_views": quitadas}

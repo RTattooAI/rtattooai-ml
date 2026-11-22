@@ -1,4 +1,8 @@
 {
+  "modo": "ensamble",
+  "alfa": 0.05,
+  "_modo": "ensamble = dos codificadores (DINOv2 + cabeza y CNN) con verificacion por consenso y semaforo conformal (serving/ensamble.py). clasico = una cabeza con los umbrales fijos de abajo, que solo se usan en ese modo.",
+  "_alfa": "Tasa maxima de tatuajes desconocidos que el semaforo deja pasar (garantia conformal). Elegida con el conjunto de validacion, no con la prueba final: con 0.01 el sistema reconocia el 49 % de los tatuajes enrolados y con 0.05 el 92 %, sin verdes equivocados (reports/experimentos/candidatos). Es una decision institucional: bajarla hace el sistema mas estricto.",
   "_note": "Calibrado con datos reales (src.embedding.enroll_recall_test). El umbral se elige por tasa de falsos positivos admitida (5 %), no por F1: en una herramienta de apoyo policial senalar a quien no corresponde cuesta mucho mas que no senalar a quien si.",
   "det_conf": 0.6,
   "det_iou": 0.45,

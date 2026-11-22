@@ -45,13 +45,13 @@ class CNNEmbedder:
 
         # Los pesos vienen del checkpoint; el argumento solo elige la arquitectura,
         # así que da igual con cuáles se inicializara.
-        red = construir_red("ninguno", torch)
+        red = construir_red("ninguno", torch, ckpt.get("arquitectura", "resnet18"))
         red.load_state_dict(ckpt["state_dict"])
         self.red = red.eval().to(device)
 
         # Marcador para que el resto del arnés pueda informar qué se está midiendo.
         self.head = True
-        self.nombre = f"resnet18({self.meta.get('pesos_iniciales', '?')})"
+        self.nombre = f"{ckpt.get('arquitectura', 'resnet18')}({self.meta.get('pesos_iniciales', '?')})"
 
     def embed(self, images, bg=(255, 255, 255), chunk: int = 128) -> np.ndarray:
         single = isinstance(images, Image.Image)
@@ -138,6 +138,9 @@ def resolver(spec: str | None):
 
     if spec == "dinov2:sin-head":
         return TattooEmbedder()
+
+    if spec.startswith("dinov2:head="):
+        return TattooEmbedder(head_path=spec[len("dinov2:head="):])
 
     if spec.startswith("cnn:"):
         ruta = Path(spec[4:])
