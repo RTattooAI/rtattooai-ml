@@ -1,0 +1,206 @@
+{
+ "nitidez": {
+  "marginal": {
+   "far": 0.0089,
+   "reconoce": 0.7982,
+   "far_por_grupo": [
+    0.0057,
+    0.0144,
+    0.0075
+   ],
+   "peor_grupo_far": 0.0144,
+   "reconoce_por_grupo": [
+    0.619,
+    0.84,
+    0.815
+   ],
+   "n_calibracion_por_grupo": [
+    399.0,
+    335.0,
+    369.0
+   ]
+  },
+  "condicionado": {
+   "far": 0.0083,
+   "reconoce": 0.5955,
+   "far_por_grupo": [
+    0.0086,
+    0.0087,
+    0.0076
+   ],
+   "peor_grupo_far": 0.0087,
+   "reconoce_por_grupo": [
+    0.66,
+    0.475,
+    0.757
+   ],
+   "n_calibracion_por_grupo": [
+    399.0,
+    335.0,
+    369.0
+   ]
+  }
+ },
+ "contraste": {
+  "marginal": {
+   "far": 0.0089,
+   "reconoce": 0.7982,
+   "far_por_grupo": [
+    0.0122,
+    0.0077,
+    0.0066
+   ],
+   "peor_grupo_far": 0.0122,
+   "reconoce_por_grupo": [
+    0.829,
+    0.767,
+    0.817
+   ],
+   "n_calibracion_por_grupo": [
+    389.0,
+    349.0,
+    365.0
+   ]
+  },
+  "condicionado": {
+   "far": 0.0079,
+   "reconoce": 0.7568,
+   "far_por_grupo": [
+    0.0072,
+    0.0084,
+    0.0081
+   ],
+   "peor_grupo_far": 0.0084,
+   "reconoce_por_grupo": [
+    0.696,
+    0.771,
+    0.769
+   ],
+   "n_calibracion_por_grupo": [
+    389.0,
+    349.0,
+    365.0
+   ]
+  }
+ },
+ "tamaño": {
+  "marginal": {
+   "far": 0.0089,
+   "reconoce": 0.7982,
+   "far_por_grupo": [
+    0.0045,
+    0.0063,
+    0.0199
+   ],
+   "peor_grupo_far": 0.0199,
+   "reconoce_por_grupo": [
+    NaN,
+    0.656,
+    0.815
+   ],
+   "n_calibracion_por_grupo": [
+    424.0,
+    407.0,
+    272.0
+   ]
+  },
+  "condicionado": {
+   "far": 0.0084,
+   "reconoce": 0.2455,
+   "far_por_grupo": [
+    0.0085,
+    0.0089,
+    0.0075
+   ],
+   "peor_grupo_far": 0.0089,
+   "reconoce_por_grupo": [
+    NaN,
+    0.722,
+    0.19
+   ],
+   "n_calibracion_por_grupo": [
+    424.0,
+    407.0,
+    272.0
+   ]
+  }
+ },
+ "calidad_combinada": {
+  "marginal": {
+   "far": 0.0089,
+   "reconoce": 0.7982,
+   "far_por_grupo": [
+    0.0076,
+    0.0076,
+    0.0119
+   ],
+   "peor_grupo_far": 0.0119,
+   "reconoce_por_grupo": [
+    0.531,
+    0.774,
+    0.844
+   ],
+   "n_calibracion_por_grupo": [
+    417.0,
+    347.0,
+    339.0
+   ]
+  },
+  "condicionado": {
+   "far": 0.0087,
+   "reconoce": 0.6261,
+   "far_por_grupo": [
+    0.0088,
+    0.0083,
+    0.0089
+   ],
+   "peor_grupo_far": 0.0089,
+   "reconoce_por_grupo": [
+    0.534,
+    0.701,
+    0.571
+   ],
+   "n_calibracion_por_grupo": [
+    417.0,
+    347.0,
+    339.0
+   ]
+  }
+ },
+ "acuerdo": {
+  "marginal": {
+   "far": 0.0089,
+   "reconoce": 0.7982,
+   "far_por_grupo": [
+    0.0011,
+    0.1092
+   ],
+   "peor_grupo_far": 0.1092,
+   "reconoce_por_grupo": [
+    0.189,
+    0.854
+   ],
+   "n_calibracion_por_grupo": [
+    1023.0,
+    79.0
+   ]
+  },
+  "condicionado": {
+   "far": 0.01,
+   "reconoce": 0.0632,
+   "far_por_grupo": [
+    0.0098,
+    0.0115
+   ],
+   "peor_grupo_far": 0.0115,
+   "reconoce_por_grupo": [
+    0.348,
+    0.037
+   ],
+   "n_calibracion_por_grupo": [
+    1023.0,
+    79.0
+   ]
+  }
+ }
+}

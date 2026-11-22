@@ -1,0 +1,129 @@
+{
+ "datos": {
+  "tatuajes_enrolados": 85,
+  "identidades_galeria": 385,
+  "consultas": 353,
+  "desconocidos": 2208,
+  "huella_ensamble": "gen:caf429c2ca9bc792+esp:ecc42d81f3ed6dfe"
+ },
+ "top1": {
+  "produccion_actual": 0.8186968838526912,
+  "generalista": 0.9150141643059491,
+  "especialista": 0.8923512747875354,
+  "ensamble": 0.9376770538243626
+ },
+ "produccion_actual_fijo": {
+  "reconoce": 0.8186968838526912,
+  "verde_ok": 0.7903682719546742,
+  "verde_mal": 0.11048158640226628,
+  "amarillo": 0.09348441926345609,
+  "rojo": 0.0056657223796034,
+  "far": 0.8396739130434783,
+  "far_verde": 0.13722826086956522,
+  "precision_verde": 0.8773584905660378
+ },
+ "ensamble_alfa=0.01": {
+  "reconoce": 0.8113,
+  "verde_ok": 0.6935,
+  "verde_mal": 0.009,
+  "amarillo": 0.1513,
+  "rojo": 0.1462,
+  "far": 0.0093,
+  "far_verde": 0.0075,
+  "precision_verde": 0.9872,
+  "tau": 2.0622,
+  "far_p95": 0.0163,
+  "reconoce_por_variante": {
+   "a": 0.801,
+   "ar": 0.909,
+   "b": 0.576,
+   "c": 0.853,
+   "i": 0.836,
+   "r": 0.816
+  }
+ },
+ "ensamble_alfa=0.05": {
+  "reconoce": 0.9102,
+  "verde_ok": 0.5838,
+  "verde_mal": 0.0066,
+  "amarillo": 0.3732,
+  "rojo": 0.0364,
+  "far": 0.0492,
+  "far_verde": 0.0144,
+  "precision_verde": 0.9887,
+  "tau": 1.0223,
+  "far_p95": 0.0667,
+  "reconoce_por_variante": {
+   "a": 0.922,
+   "ar": 0.952,
+   "b": 0.769,
+   "c": 0.925,
+   "i": 0.934,
+   "r": 0.919
+  }
+ },
+ "ablacion_alfa5": {
+  "solo_generalista": {
+   "reconoce": 0.8833,
+   "verde_ok": 0.516,
+   "verde_mal": 0.0099,
+   "amarillo": 0.4182,
+   "rojo": 0.056,
+   "far": 0.0501,
+   "far_verde": 0.04,
+   "precision_verde": 0.9809
+  },
+  "solo_especialista": {
+   "reconoce": 0.8076,
+   "verde_ok": 0.6386,
+   "verde_mal": 0.0184,
+   "amarillo": 0.1945,
+   "rojo": 0.1485,
+   "far": 0.0501,
+   "far_verde": 0.0372,
+   "precision_verde": 0.9717
+  },
+  "ensamble_sin_consenso": {
+   "reconoce": 0.9095,
+   "verde_ok": 0.5956,
+   "verde_mal": 0.0111,
+   "amarillo": 0.3563,
+   "rojo": 0.037,
+   "far": 0.0491,
+   "far_verde": 0.0327,
+   "precision_verde": 0.9818
+  },
+  "ensamble_con_consenso": {
+   "reconoce": 0.9095,
+   "verde_ok": 0.5748,
+   "verde_mal": 0.0069,
+   "amarillo": 0.3813,
+   "rojo": 0.037,
+   "far": 0.0491,
+   "far_verde": 0.0144,
+   "precision_verde": 0.9881
+  }
+ },
+ "tamano_galeria": {
+  "85": {
+   "fijo_far": 0.3188405797101449,
+   "conformal_far_alfa0.01": 0.0108,
+   "conformal_far_alfa0.05": 0.0502
+  },
+  "185": {
+   "fijo_far": 0.6499094202898551,
+   "conformal_far_alfa0.01": 0.0094,
+   "conformal_far_alfa0.05": 0.0516
+  },
+  "285": {
+   "fijo_far": 0.7735507246376812,
+   "conformal_far_alfa0.01": 0.0093,
+   "conformal_far_alfa0.05": 0.0513
+  },
+  "385": {
+   "fijo_far": 0.8396739130434783,
+   "conformal_far_alfa0.01": 0.0095,
+   "conformal_far_alfa0.05": 0.0494
+  }
+ }
+}

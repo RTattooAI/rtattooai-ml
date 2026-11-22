@@ -1,0 +1,223 @@
+{
+  "consulta": "ood",
+  "identidades_enroladas": 200,
+  "impostores": 200,
+  "cabeza": true,
+  "dim": 128,
+  "por_nivel": {
+    "0.0": {
+      "top1": 1.0,
+      "similitud_media": 1.0,
+      "margen_medio": 0.453,
+      "z_medio": 8.6445
+    },
+    "0.2": {
+      "top1": 0.945,
+      "similitud_media": 0.8725,
+      "margen_medio": 0.3369,
+      "z_medio": 7.2266
+    },
+    "0.4": {
+      "top1": 0.84,
+      "similitud_media": 0.7594,
+      "margen_medio": 0.241,
+      "z_medio": 5.9515
+    },
+    "0.6": {
+      "top1": 0.67,
+      "similitud_media": 0.6728,
+      "margen_medio": 0.1711,
+      "z_medio": 5.0931
+    },
+    "0.8": {
+      "top1": 0.525,
+      "similitud_media": 0.6141,
+      "margen_medio": 0.1253,
+      "z_medio": 4.4229
+    }
+  },
+  "impostores_similitud": {
+    "media": 0.5414,
+    "p95": 0.7107,
+    "max": 0.8104
+  },
+  "operacion_desplegada": {
+    "threshold": 0.55,
+    "margin": 0.05,
+    "precision": 0.9153,
+    "recall": 0.735,
+    "fp": 68,
+    "fpr": 0.34
+  },
+  "reglas": {
+    "top1": {
+      "auc": 0.9353,
+      "al_5_por_ciento_fp": {
+        "umbral": 0.715,
+        "f1": 0.7589,
+        "precision": 0.9856,
+        "recall": 0.617,
+        "fp": 9,
+        "fpr": 0.045
+      }
+    },
+    "margen": {
+      "auc": 0.8998,
+      "al_5_por_ciento_fp": {
+        "umbral": 0.235,
+        "f1": 0.6879,
+        "precision": 0.9833,
+        "recall": 0.529,
+        "fp": 9,
+        "fpr": 0.045
+      }
+    },
+    "z": {
+      "auc": 0.879,
+      "al_5_por_ciento_fp": {
+        "umbral": 6.25,
+        "f1": 0.5923,
+        "precision": 0.977,
+        "recall": 0.425,
+        "fp": 10,
+        "fpr": 0.05
+      }
+    }
+  },
+  "operacion_recomendada": {
+    "threshold": 0.71,
+    "margin": 0.05,
+    "recall": 0.617,
+    "fp": 10,
+    "fpr": 0.05,
+    "recall_por_nivel": {
+      "0.0": 1.0,
+      "0.2": 0.865,
+      "0.4": 0.64,
+      "0.6": 0.38,
+      "0.8": 0.2
+    }
+  },
+  "tabla_umbrales": [
+    {
+      "umbral": 0.6,
+      "fp": 50,
+      "fpr": 0.25,
+      "recall_por_nivel": [
+        1.0,
+        0.925,
+        0.79,
+        0.57,
+        0.385
+      ]
+    },
+    {
+      "umbral": 0.65,
+      "fp": 29,
+      "fpr": 0.145,
+      "recall_por_nivel": [
+        1.0,
+        0.915,
+        0.74,
+        0.49,
+        0.29
+      ]
+    },
+    {
+      "umbral": 0.7,
+      "fp": 13,
+      "fpr": 0.065,
+      "recall_por_nivel": [
+        1.0,
+        0.895,
+        0.655,
+        0.415,
+        0.22
+      ]
+    },
+    {
+      "umbral": 0.75,
+      "fp": 4,
+      "fpr": 0.02,
+      "recall_por_nivel": [
+        1.0,
+        0.83,
+        0.55,
+        0.335,
+        0.175
+      ]
+    },
+    {
+      "umbral": 0.78,
+      "fp": 3,
+      "fpr": 0.015,
+      "recall_por_nivel": [
+        1.0,
+        0.815,
+        0.465,
+        0.265,
+        0.125
+      ]
+    },
+    {
+      "umbral": 0.8,
+      "fp": 2,
+      "fpr": 0.01,
+      "recall_por_nivel": [
+        1.0,
+        0.795,
+        0.43,
+        0.225,
+        0.085
+      ]
+    },
+    {
+      "umbral": 0.82,
+      "fp": 0,
+      "fpr": 0.0,
+      "recall_por_nivel": [
+        1.0,
+        0.755,
+        0.395,
+        0.19,
+        0.08
+      ]
+    },
+    {
+      "umbral": 0.85,
+      "fp": 0,
+      "fpr": 0.0,
+      "recall_por_nivel": [
+        1.0,
+        0.705,
+        0.32,
+        0.145,
+        0.03
+      ]
+    },
+    {
+      "umbral": 0.88,
+      "fp": 0,
+      "fpr": 0.0,
+      "recall_por_nivel": [
+        1.0,
+        0.63,
+        0.22,
+        0.12,
+        0.01
+      ]
+    },
+    {
+      "umbral": 0.9,
+      "fp": 0,
+      "fpr": 0.0,
+      "recall_por_nivel": [
+        1.0,
+        0.555,
+        0.16,
+        0.09,
+        0.0
+      ]
+    }
+  ]
+}

@@ -1,7 +1,28 @@
 {
-  "_note": "Estandar de operacion del flujo. Valores PROVISIONALES (del Paso 0 sintetico). Recalibra con datos reales: python -m src.embedding.calibrate --positives ... --negatives ...",
-  "det_conf": 0.15,
+  "modo": "ensamble",
+  "alfa": 0.05,
+  "_modo": "ensamble = dos codificadores (DINOv2 + cabeza y CNN) con verificacion por consenso y semaforo conformal (serving/ensamble.py). clasico = una cabeza con los umbrales fijos de abajo, que solo se usan en ese modo.",
+  "_alfa": "Tasa maxima de tatuajes desconocidos que el semaforo deja pasar (garantia conformal). Elegida con el conjunto de validacion, no con la prueba final: con 0.01 el sistema reconocia el 49 % de los tatuajes enrolados y con 0.05 el 92 %, sin verdes equivocados (reports/experimentos/candidatos). Es una decision institucional: bajarla hace el sistema mas estricto.",
+  "_note": "Calibrado con datos reales (src.embedding.enroll_recall_test). El umbral se elige por tasa de falsos positivos admitida (5 %), no por F1: en una herramienta de apoyo policial senalar a quien no corresponde cuesta mucho mas que no senalar a quien si.",
+  "det_conf": 0.6,
   "det_iou": 0.45,
-  "match_threshold": 0.55,
-  "match_margin": 0.05
+  "match_threshold": 0.7,
+  "match_margin": 0.0,
+  "review_threshold": 0.55,
+  "_medicion": {
+    "fecha": "2026-09-10",
+    "cabeza": "head-v2 (6800 recortes del split train, 60 epocas)",
+    "protocolo": "200 tatuajes enrolados con el mismo procedimiento del servicio y consultados con versiones degradadas generadas con otro flujo de azar; 200 impostores de fotografias de origen distinto",
+    "auc_coseno_top1": 0.9401,
+    "curva_umbral_por_tamano": {
+      "50": 0.665,
+      "100": 0.72,
+      "200": 0.82,
+      "400": 0.89
+    },
+    "informe": "reports/enroll_recall_head_v2.json"
+  },
+  "_umbral_depende_del_tamano_de_la_galeria": "MEDIDO: el umbral necesario SUBE conforme crece el catalogo, porque con mas identidades hay mas ocasiones de parecerse a algo por azar. Al 5 % de falsos positivos: 50 identidades -> 0.665 (recall 86 %); 100 -> 0.72 (79 %); 200 -> 0.82 (66 %); 400 -> 0.89 (50 %). Los valores de aqui estan fijados para la galeria actual (25 identidades). RECALIBRAR cuando el catalogo pase de ~100 identidades, o el sistema empezara a aceptar impostores sin que nadie lo note.",
+  "calibrated_for_identities": 25,
+  "_det_conf": "Subido de 0.15 a 0.60 con datos reales (src.detection.sweep_conf). Con 0.15, el 45 % de las fotografias de personas SIN tatuajes recibia alguna deteccion falsa; con 0.60 baja al 13 % y la deteccion real cae de 92.0 % a 88.3 %. Medido sobre 140 negativos revisados a ojo y sin tomas repetidas, y 500 imagenes etiquetadas de validacion con 564 tatuajes (IoU 0.5). El detector responde a marcas tipo tinta sobre superficie clara sin importar que sea piel: texto impreso y manuscrito son su confusion principal, y eso no se arregla moviendo el umbral."
 }

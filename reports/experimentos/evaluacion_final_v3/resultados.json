@@ -1,0 +1,83 @@
+{
+ "datos": {
+  "tatuajes_enrolados": 85,
+  "identidades_galeria": 385,
+  "consultas": 353,
+  "desconocidos": 2208,
+  "huella_ensamble": "gen:fc295fff8ed2c9b4+esp:e5f8572be2adb533"
+ },
+ "top1": {
+  "produccion_actual": 0.8186968838526912,
+  "generalista": 0.9178470254957507,
+  "especialista": 0.9150141643059491,
+  "ensamble": 0.9320113314447592
+ },
+ "produccion_actual_fijo": {
+  "reconoce": 0.8186968838526912,
+  "verde_ok": 0.7903682719546742,
+  "verde_mal": 0.11048158640226628,
+  "amarillo": 0.09348441926345609,
+  "rojo": 0.0056657223796034,
+  "far": 0.8396739130434783,
+  "far_verde": 0.13722826086956522,
+  "precision_verde": 0.8773584905660378
+ },
+ "ensamble_alfa=0.01": {
+  "reconoce": 0.7925,
+  "verde_ok": 0.7061,
+  "verde_mal": 0.0168,
+  "amarillo": 0.1184,
+  "rojo": 0.1587,
+  "far": 0.009,
+  "far_verde": 0.0073,
+  "precision_verde": 0.9767,
+  "tau": 2.2282,
+  "far_p95": 0.0157,
+  "reconoce_por_variante": {
+   "a": 0.765,
+   "ar": 0.872,
+   "b": 0.552,
+   "c": 0.816,
+   "i": 0.854,
+   "r": 0.82
+  }
+ },
+ "ensamble_alfa=0.05": {
+  "reconoce": 0.9108,
+  "verde_ok": 0.6241,
+  "verde_mal": 0.0065,
+  "amarillo": 0.3392,
+  "rojo": 0.0301,
+  "far": 0.0495,
+  "far_verde": 0.0168,
+  "precision_verde": 0.9896,
+  "tau": 1.0285,
+  "far_p95": 0.0648,
+  "reconoce_por_variante": {
+   "a": 0.923,
+   "ar": 0.931,
+   "b": 0.768,
+   "c": 0.943,
+   "i": 0.925,
+   "r": 0.929
+  }
+ },
+ "tamano_galeria": {
+  "85": {
+   "fijo_far": 0.3188405797101449,
+   "conformal_far_alfa5": 0.03804347826086957
+  },
+  "185": {
+   "fijo_far": 0.6499094202898551,
+   "conformal_far_alfa5": 0.057971014492753624
+  },
+  "285": {
+   "fijo_far": 0.7735507246376812,
+   "conformal_far_alfa5": 0.06793478260869565
+  },
+  "385": {
+   "fijo_far": 0.8396739130434783,
+   "conformal_far_alfa5": 0.0661231884057971
+  }
+ }
+}

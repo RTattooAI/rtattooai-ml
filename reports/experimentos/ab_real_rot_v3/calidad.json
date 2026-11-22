@@ -1,0 +1,47 @@
+{
+ "A_peso_por_nitidez": {
+  "igual": 0.8853,
+  "adapt_nitidez": 0.8787,
+  "top1_igual": 0.9318,
+  "top1_adapt": 0.9272,
+  "w_por_tercil_media": [
+   0.62,
+   0.67,
+   0.53
+  ],
+  "w_por_tercil_desv": [
+   0.17,
+   0.18,
+   0.18
+  ],
+  "adapt_gana_en_%": 21.3
+ },
+ "B_marginal": {
+  "far": 0.0088,
+  "reconoce": 0.8462,
+  "far_por_tercil(baja,media,alta)": [
+   0.0174,
+   0.0023,
+   0.0061
+  ],
+  "reconoce_por_tercil": [
+   0.81,
+   0.875,
+   0.826
+  ]
+ },
+ "B_mondrian": {
+  "far": 0.0098,
+  "reconoce": 0.8515,
+  "far_por_tercil(baja,media,alta)": [
+   0.0107,
+   0.0165,
+   0.0062
+  ],
+  "reconoce_por_tercil": [
+   0.759,
+   0.927,
+   0.787
+  ]
+ }
+}

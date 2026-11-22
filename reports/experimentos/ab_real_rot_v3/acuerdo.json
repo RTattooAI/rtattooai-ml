@@ -1,0 +1,38 @@
+{
+ "alfa=0.01 acuerdo=False": {
+  "far": 0.0093,
+  "far_verde": 0.0068,
+  "verde_ok": 0.7004,
+  "verde_mal": 0.019,
+  "amarillo": 0.1931,
+  "rojo": 0.0875,
+  "precision_verde": 0.9735
+ },
+ "alfa=0.01 acuerdo=True": {
+  "far": 0.0093,
+  "far_verde": 0.0035,
+  "verde_ok": 0.6838,
+  "verde_mal": 0.0139,
+  "amarillo": 0.2147,
+  "rojo": 0.0875,
+  "precision_verde": 0.9799
+ },
+ "alfa=0.05 acuerdo=False": {
+  "far": 0.0299,
+  "far_verde": 0.0199,
+  "verde_ok": 0.6472,
+  "verde_mal": 0.0107,
+  "amarillo": 0.304,
+  "rojo": 0.0381,
+  "precision_verde": 0.9842
+ },
+ "alfa=0.05 acuerdo=True": {
+  "far": 0.0299,
+  "far_verde": 0.0067,
+  "verde_ok": 0.6292,
+  "verde_mal": 0.0103,
+  "amarillo": 0.3224,
+  "rojo": 0.0381,
+  "precision_verde": 0.9842
+ }
+}

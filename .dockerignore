@@ -38,3 +38,18 @@ models/gallery_dinov2.backup.npz
 .idea/
 .DS_Store
 Thumbs.db
+
+# Pesos de experimentos y copias de respaldo que el servicio no carga
+models/cnn_*.pt
+models/*.pre-*.onnx
+models/*.pre-*.pt
+models/gallery_dinov2.*.npz
+models/*.onnx
+yolov8n.pt
+
+# Candidatos de entrenamiento, respaldos del ensamble y cabezas de experimentos
+models/candidatos/
+models/ensamble.*.backup/
+models/embed_head_v*.pt
+models/embed_head.pre-*.pt
+models/galeria_ensamble*.npz

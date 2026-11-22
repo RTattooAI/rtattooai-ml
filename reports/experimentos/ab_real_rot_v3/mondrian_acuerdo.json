@@ -1,0 +1,18 @@
+{
+ "marginal": {
+  "far": 0.0088,
+  "far_desacuerdo": 0.002,
+  "far_acuerdo": 0.09,
+  "reconoce": 0.8462,
+  "reconoce_acuerdo": 0.9024,
+  "reconoce_desacuerdo": 0.2505
+ },
+ "por_acuerdo": {
+  "far": 0.0098,
+  "far_desacuerdo": 0.007,
+  "far_acuerdo": 0.0427,
+  "reconoce": 0.7238,
+  "reconoce_acuerdo": 0.7585,
+  "reconoce_desacuerdo": 0.3509
+ }
+}

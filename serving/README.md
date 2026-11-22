@@ -5,7 +5,59 @@ internet) que envuelve el pipeline de detección + identificación ya
 entrenado: **YOLOv8m (ONNX) + DINOv2 ViT-S/14 + cabeza afinada + galería**.
 No reentrena nada; ver `API_CONTRACT.md` sección A para el contrato exacto.
 
-## Artefactos que usa (ya existentes en `models/`)
+## Modo ensamble (por defecto desde el 23/10/2026)
+
+Desde esta versión el servicio identifica con un **ensamble de dos codificadores
+con verificación por consenso y semáforo conformal** (`MODO_IDENTIFICACION=ensamble`,
+o `"modo"` en `match_config.json`). El modo anterior sigue disponible con
+`MODO_IDENTIFICACION=clasico` para volver atrás sin reconstruir la imagen.
+
+| Pieza | Archivo | Qué hace |
+|---|---|---|
+| Generalista | `models/ensamble/generalista.pt` | Cabeza contrastiva sobre DINOv2 ViT-S/14 |
+| Especialista | `models/ensamble/especialista.pt` | CNN (ResNet) afinada con tatuajes |
+| Galería base | `models/ensamble/galeria_inicial.npz` | Catálogo de símbolos con los dos vectores y vistas giradas |
+| Calibración | `models/ensamble/calibracion_desconocidos.npz` | Tatuajes que no están en la galería |
+| Lógica | `serving/ensamble.py` | Normalización, línea conformal y veredicto (sin GPU, con pruebas) |
+
+**Cómo decide** (detalle en el docstring de `serving/ensamble.py`):
+
+1. Cada codificador puntúa cada identidad (coseno máximo entre sus vistas).
+2. Cada modelo se normaliza con sus puntajes contra los desconocidos de calibración
+   y se promedian con el mismo peso: **no hay pesos elegidos a mano**.
+3. La línea τ se calcula para que, como máximo, una fracción **α** de los
+   desconocidos la pase (`"alfa"` en `match_config.json`, 0.05 por defecto). Se
+   recalcula sola al enrolar o quitar, porque depende del tamaño de la galería.
+4. Veredicto: ningún candidato sobre τ → `no_match`; uno solo **y los dos modelos
+   eligen ese mismo** → `match`; en otro caso → `review`.
+
+**Escala que se muestra.** `similarity` es un puntaje calibrado: **0.70 = la línea
+τ** y 0.55 = medio punto normalizado por debajo. Así la pantalla (que pinta verde
+desde 0.70 y usa los cortes 70/55) dice lo mismo que el modelo, sin cambios en el
+backend ni en el frontend. El coseno real viaja en `cosine`, el puntaje con el que
+se decide en `score` y si pasa la línea en `candidate`; la detección trae
+`consensus`. Son campos opcionales: el backend actual los ignora.
+
+**Regenerar los artefactos** (al cambiar de pesos):
+
+```bash
+python -m src.embedding.construir_ensamble --generalista <cabeza.pt> --especialista <cnn.pt>
+```
+
+La galería del ensamble que crece al enrolar vive en `models/galeria_ensamble.npz`
+(en Docker, dentro del volumen) o en el blob `galeria_ensamble.npz`; la primera vez
+se siembra con la galería base. Tras regenerar, borre esa galería o use «Reparar
+galería» en la pantalla de Modelos para re-enrolar lo que se añadió desde la app.
+
+**Elegir y medir** (ver `reports/experimentos/`):
+
+```bash
+python -m src.embedding.validar_ensamble --generalistas ... --especialistas ...   # elegir (validación)
+python -m src.embedding.evaluar_ensamble                                           # medir (prueba final)
+python -m unittest serving.tests.test_ensamble serving.tests.test_gallery_store
+```
+
+## Artefactos que usa en modo clásico
 
 - `models/yolov8m_best.onnx` — detector (CPU, vía `ultralytics.YOLO` + onnxruntime).
 - `models/embed_head.pt` — cabeza afinada (384 → 256 → 128) sobre DINOv2.

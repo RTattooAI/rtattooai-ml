@@ -1,5 +1,5 @@
 # Servicio de inferencia (FastAPI) — detección YOLOv8m ONNX + identificación
-# DINOv2 ViT-S/14 + cabeza afinada + galería. Inferencia en CPU.
+# DINOv2 ViT-S/14 + cabeza afinada + galería. Inferencia en GPU si la hay.
 #
 # Build (contexto = raíz del repo, para poder copiar src/ y models/):
 #   docker build -f serving/Dockerfile -t rtattooai-serving .
@@ -26,9 +26,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY serving/requirements.txt ./serving/requirements.txt
 
-# torch/torchvision CPU-only (evita arrastrar binarios CUDA innecesarios en el contenedor)
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+# Variante de PyTorch. Por defecto cu128 (GPU local). Para Azure Container Apps,
+# que solo tiene CPU, se construye con TORCH_VARIANT=cpu y ORT_PACKAGE=onnxruntime:
+# la imagen pierde varios GB de CUDA y el arranque en frio se acorta.
+ARG TORCH_VARIANT=cu128
+ARG ORT_PACKAGE=onnxruntime-gpu
+
+# torch/torchvision con CUDA 12.8. La imagen crece varios GB, pero DINOv2 a
+# 518 px tarda del orden de un segundo por recorte en CPU y decenas de
+# milisegundos en GPU: es lo que hace viable el analisis en vivo (RNF-04).
+# Sin GPU visible, INFER_DEVICE resuelve a cpu y el servicio arranca igual.
+RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/${TORCH_VARIANT} \
     && pip install --no-cache-dir -r serving/requirements.txt
+
+# onnxruntime-gpu ejecuta el detector ONNX en la GPU. Busca CUDA y cuDNN en el
+# sistema, y aqui vienen dentro de los paquetes nvidia-* que arrastra torch,
+# bajo site-packages/nvidia/*/lib.
+RUN pip install --no-cache-dir ${ORT_PACKAGE}
+
+ENV NVLIB=/usr/local/lib/python3.14/site-packages/nvidia
+ENV LD_LIBRARY_PATH=${NVLIB}/cuda_runtime/lib:${NVLIB}/cudnn/lib:${NVLIB}/cublas/lib:${NVLIB}/cufft/lib:${NVLIB}/curand/lib
 
 # Pre-descarga el backbone DINOv2 (timm) en build-time: evita que el primer
 # request del contenedor dependa de salida a internet.
@@ -37,6 +54,11 @@ RUN python -c "import timm; timm.create_model('vit_small_patch14_dinov2.lvd142m'
 COPY src ./src
 COPY serving ./serving
 COPY models ./models
+# Modo ensamble: pesos, galeria base y calibracion FUERA de /app/models. En Docker
+# Compose esa carpeta es un volumen que solo se precarga la primera vez: unos pesos
+# nuevos puestos ahi no aparecerian nunca en una maquina que ya lo tenia creado.
+COPY models/ensamble ./ensamble
+ENV ENSAMBLE_DIR=/app/ensamble
 
 RUN useradd --uid 1000 --home-dir /app --no-create-home --shell /usr/sbin/nologin appuser \
     && chown -R appuser:appuser /app

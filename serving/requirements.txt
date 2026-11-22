@@ -1,6 +1,6 @@
 # Dependencias del microservicio de inferencia (serving/).
-# torch/torchvision CPU-only se instalan por separado en el Dockerfile
-# (--index-url https://download.pytorch.org/whl/cpu) para no arrastrar CUDA.
+# torch/torchvision con CUDA se instalan por separado en el Dockerfile
+# (--index-url https://download.pytorch.org/whl/cu128).
 
 fastapi>=0.110.0
 uvicorn[standard]>=0.27.0
@@ -9,7 +9,7 @@ pydantic>=2.6.0
 
 ultralytics>=8.3.0
 onnx>=1.16.0
-onnxruntime>=1.17.0
+# onnxruntime-gpu se instala en el Dockerfile (necesita el indice de CUDA)
 timm>=1.0.0
 Pillow>=10.2.0
 numpy>=1.26.0

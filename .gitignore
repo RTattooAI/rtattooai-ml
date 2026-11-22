@@ -65,3 +65,13 @@ Thumbs.db
 # Temporales
 *.log
 _*_tmp*
+
+# Registros de ejecucion de los experimentos: el resultado se versiona, la salida
+# de consola no.
+reports/experimentos/log_*.txt
+
+# Embeddings y matrices intermedias de los experimentos: se regeneran con los scripts
+reports/experimentos/**/*.npz
+reports/experimentos/**/*.npy
+reports/experimentos/*.npz
+reports/experimentos/*.npy
