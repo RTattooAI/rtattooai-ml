@@ -1,0 +1,10 @@
+Validación: 150 identidades enroladas (1200 vistas), 269 consultas, 500 desconocidos
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+head_k10 + cnn_r18_k6e50                 top1=0.948 | α1%: reconoce=0.433 verde=0.424 mal=0.015 far=0.0085 | α5%: reconoce=0.894 verde=0.778 mal=0.000 far=0.0473
+head_k10 + cnn_r18_ref                   top1=0.937 | α1%: reconoce=0.461 verde=0.453 mal=0.015 far=0.0084 | α5%: reconoce=0.888 verde=0.786 mal=0.000 far=0.0473
+head_k10_h1024 + cnn_r18_k6e50           top1=0.952 | α1%: reconoce=0.464 verde=0.452 mal=0.015 far=0.0082 | α5%: reconoce=0.903 verde=0.765 mal=0.000 far=0.0475
+head_k10_h1024 + cnn_r18_ref             top1=0.941 | α1%: reconoce=0.478 verde=0.472 mal=0.014 far=0.0082 | α5%: reconoce=0.896 verde=0.763 mal=0.000 far=0.0482
+head_ref + cnn_r18_k6e50                 top1=0.944 | α1%: reconoce=0.493 verde=0.481 mal=0.014 far=0.0086 | α5%: reconoce=0.891 verde=0.781 mal=0.000 far=0.0469
+head_ref + cnn_r18_ref                   top1=0.941 | α1%: reconoce=0.497 verde=0.491 mal=0.014 far=0.0086 | α5%: reconoce=0.888 verde=0.784 mal=0.000 far=0.0482
+
+Mejor pareja (reconocimiento medio α 1 % y 5 %): head_ref + cnn_r18_ref

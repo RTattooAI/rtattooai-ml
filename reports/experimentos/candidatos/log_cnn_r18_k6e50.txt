@@ -1,0 +1,22 @@
+=== ResNet-18 · pesos=imagenet · lr=0.0001 ===
+Construyendo fuentes y vistas (mismas que la cabeza sobre DINOv2)…
+  identidades: 3262 (25 gang + 3237 reales agrupadas) | vistas: 25485 | pares dudosos enmascarados: 596
+Pasando 25485 vistas a memoria como uint8 224×224…
+  3.84 GB en RAM
+  identidades entrenables (≥2 vistas): 3262
+  parámetros entrenables: 11.3 M   (la cabeza sobre DINOv2: 0.13 M)
+Entrenando: 50 épocas × 50 pasos (64 identidades × 4 vistas por lote)…
+  época   1/50  loss=2.5656  (70s)
+  época   5/50  loss=1.3627  (349s)
+  época  10/50  loss=1.2357  (697s)
+  época  15/50  loss=1.1931  (1045s)
+  época  20/50  loss=1.1707  (1393s)
+  época  25/50  loss=1.1604  (1741s)
+  época  30/50  loss=1.1560  (2090s)
+  época  35/50  loss=1.1484  (2439s)
+  época  40/50  loss=1.1506  (2789s)
+  época  45/50  loss=1.1456  (3139s)
+  época  50/50  loss=1.1461  (3487s)
+
+Guardado: models\candidatos\cnn_r18_k6e50.pt  (3487s de entrenamiento)
+Evaluar: python -m src.embedding.enroll_recall_test --backbone cnn:models\candidatos\cnn_r18_k6e50.pt

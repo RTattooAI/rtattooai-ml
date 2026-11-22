@@ -1,0 +1,12 @@
+=== ResNet-18 · pesos=imagenet · lr=0.0001 ===
+Construyendo fuentes y vistas (mismas que la cabeza sobre DINOv2)…
+  identidades: 3262 (25 gang + 3237 reales agrupadas) | vistas: 17165 | pares dudosos enmascarados: 596
+Pasando 17165 vistas a memoria como uint8 224×224…
+  2.58 GB en RAM
+  identidades entrenables (≥2 vistas): 3262
+Downloading: "https://download.pytorch.org/models/resnet50-11ad3fa6.pth" to C:\Users\Ricky/.cache\torch\hub\checkpoints\resnet50-11ad3fa6.pth
+  0%|          | 0.00/97.8M [00:00<?, ?B/s] 11%|█         | 11.0M/97.8M [00:00<00:00, 114MB/s] 22%|██▏       | 22.0M/97.8M [00:00<00:00, 114MB/s] 34%|███▎      | 33.0M/97.8M [00:00<00:00, 114MB/s] 45%|████▍     | 44.0M/97.8M [00:00<00:00, 114MB/s] 56%|█████▌    | 55.0M/97.8M [00:00<00:00, 114MB/s] 67%|██████▋   | 66.0M/97.8M [00:00<00:00, 114MB/s] 79%|███████▊  | 76.9M/97.8M [00:00<00:00, 114MB/s] 90%|████████▉ | 87.8M/97.8M [00:00<00:00, 113MB/s]100%|██████████| 97.8M/97.8M [00:01<00:00, 76.5MB/s]
+  parámetros entrenables: 24.1 M   (la cabeza sobre DINOv2: 0.13 M)
+Entrenando: 30 épocas × 67 pasos (48 identidades × 4 vistas por lote)…
+  época   1/30  loss=2.3860  (1911s)
+  época   5/30  loss=1.2222  (9424s)

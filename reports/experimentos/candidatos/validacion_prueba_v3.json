@@ -1,0 +1,26 @@
+{
+ "resultados": {
+  "embed_head_v3 + cnn_imagenet_v3": {
+   "top1_suma_coseno": 0.9516728624535316,
+   "alfa=0.01": {
+    "reconoce": 0.4928,
+    "verde_ok": 0.4776,
+    "verde_mal": 0.0155,
+    "amarillo": 0.0332,
+    "rojo": 0.4737,
+    "far": 0.0092,
+    "far_verde": 0.0089
+   },
+   "alfa=0.05": {
+    "reconoce": 0.9238,
+    "verde_ok": 0.8238,
+    "verde_mal": 0.0,
+    "amarillo": 0.1479,
+    "rojo": 0.0283,
+    "far": 0.0498,
+    "far_verde": 0.0404
+   }
+  }
+ },
+ "mejor": "embed_head_v3 + cnn_imagenet_v3"
+}

@@ -1,0 +1,25 @@
+Construyendo fuentes y vistas…
+  identidades: 3262 (25 gang + 3237 reales agrupadas) | vistas: 25485 | pares dudosos enmascarados: 596
+Cacheando features de DINOv2 (congelado)…
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+  identidades entrenables (≥2 vistas): 3262
+Entrenando: 60 épocas × 33 pasos…
+C:\Users\Ricky\Documents\GitHub\rtattooai\rtattooai-ml\src\embedding\finetune_head.py:277: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+  tot += float(loss)
+  época   1/60  loss=2.3611
+  época   5/60  loss=1.6262
+  época  10/60  loss=1.5177
+  época  15/60  loss=1.4400
+  época  20/60  loss=1.3979
+  época  25/60  loss=1.3651
+  época  30/60  loss=1.3420
+  época  35/60  loss=1.3224
+  época  40/60  loss=1.3093
+  época  45/60  loss=1.2984
+  época  50/60  loss=1.2908
+  época  55/60  loss=1.2826
+  época  60/60  loss=1.2769
+
+Cabeza guardada: models/candidatos/head_ref.pt
+Evaluar: python -m src.embedding.robustness_test --head models/embed_head.pt

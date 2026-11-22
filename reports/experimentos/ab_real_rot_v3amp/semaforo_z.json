@@ -1,0 +1,35 @@
+{
+ "cabeza acuerdo=False": {
+  "far": 0.0103,
+  "far_verde": 0.0094,
+  "verde_ok": 0.681,
+  "verde_mal": 0.0205,
+  "amarillo": 0.1404,
+  "rojo": 0.1581,
+  "amar_contiene": 0.1379,
+  "prec_verde": 0.9706,
+  "top1": 0.9175
+ },
+ "z acuerdo=False": {
+  "far": 0.0103,
+  "far_verde": 0.0087,
+  "verde_ok": 0.7263,
+  "verde_mal": 0.0237,
+  "amarillo": 0.1147,
+  "rojo": 0.1354,
+  "amar_contiene": 0.1134,
+  "prec_verde": 0.9686,
+  "top1": 0.9325
+ },
+ "z acuerdo=True": {
+  "far": 0.0103,
+  "far_verde": 0.0079,
+  "verde_ok": 0.7171,
+  "verde_mal": 0.0161,
+  "amarillo": 0.1314,
+  "rojo": 0.1354,
+  "amar_contiene": 0.1226,
+  "prec_verde": 0.9781,
+  "top1": 0.9325
+ }
+}

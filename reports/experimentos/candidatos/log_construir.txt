@@ -1,0 +1,9 @@
+Respaldo de los artefactos anteriores: ensamble.20261023-124345.backup
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Codificadores: dims (128, 128) · huella gen:caf429c2ca9bc792+esp:ecc42d81f3ed6dfe
+Galería base…
+  galería base: 25 identidades, 1700 vistas (con giros)
+Desconocidos de calibración…
+  2212 desconocidos
+Listo: C:\Users\Ricky\Documents\GitHub\rtattooai\rtattooai-ml\models\ensamble
+Si ya existe models/galeria_ensamble.npz de una versión anterior, bórrela (o use «Reparar galería») para que el servicio arranque desde la nueva galería base.
