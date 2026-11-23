@@ -2,24 +2,24 @@
 # Sólo necesitamos: src/, serving/, y los artefactos de models/ que el
 # servicio carga (yolov8m_best.onnx, embed_head.pt, gallery_dinov2.npz).
 
-.git/
+.git
 .gitignore
-venv/
-.venv/
-env/
-ENV/
-__pycache__/
+venv
+.venv
+env
+ENV
+__pycache__
 *.pyc
-.pytest_cache/
-.ipynb_checkpoints/
+.pytest_cache
+.ipynb_checkpoints
 
-datasets/
-runs/
-wandb/
-notebooks/
-blender/
-app/
-reports/
+datasets
+runs
+wandb
+notebooks
+blender
+app
+reports
 
 *.log
 *.mp4
@@ -33,9 +33,9 @@ models/yolov8m_best.pt
 models/yolov8s_best.pt
 models/gallery_dinov2.backup.npz
 
-.claude/
-.vscode/
-.idea/
+.claude
+.vscode
+.idea
 .DS_Store
 Thumbs.db
 
@@ -48,8 +48,8 @@ models/*.onnx
 yolov8n.pt
 
 # Candidatos de entrenamiento, respaldos del ensamble y cabezas de experimentos
-models/candidatos/
-models/ensamble.*.backup/
+models/candidatos
+models/ensamble.*.backup
 models/embed_head_v*.pt
 models/embed_head.pre-*.pt
 models/galeria_ensamble*.npz
